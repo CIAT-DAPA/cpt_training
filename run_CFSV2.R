@@ -309,7 +309,7 @@ save_areas=function(ras,cor,all_name){
 
 ######## run ###########
 
-main_dir <- "C:/Users/dagudelo/Desktop/Codigos_TNC"
+main_dir <- "C:/Users/lllanos/Desktop"
 folders <- list.files(paste0(main_dir,"/CPT"),full.names = T)
 lapply(folders,function(x) dir.create(paste0(x,"/CFSV2_r")))
 lapply(folders,function(x) dir.create(paste0(x,"/output")))
