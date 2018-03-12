@@ -52,7 +52,7 @@ quarterly_data=function(names,data){
   data=data[-1:-2,]
   trim=substr(names,5,nchar(names)-4)
   months=strsplit(trim,"-")
-  number_months=which(month.abb%in%months[[1]])
+  number_months=sapply(months[[1]],function(x)which(month.abb==x))
   
   year=as.numeric(unlist(lapply(strsplit(data[-1,1],"-"),"[", 1),recursive=FALSE))
   month=as.numeric(unlist(lapply(strsplit(data[-1,1],"-"),"[", 2),recursive=FALSE))
