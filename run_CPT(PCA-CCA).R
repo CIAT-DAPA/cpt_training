@@ -91,7 +91,7 @@ pca_y_svd=function(x,modos){
 
 ########## run ############
 
-main_dir <- "C:/Users/dagudelo/Desktop/ppts_honduras/pca/"
+main_dir <- "C:/Users/dagudelo/Desktop/ppts_honduras/CPT/" #### Cambiar Ruta 
 path_tsm <- list.files(paste0(main_dir,"/input/CFSV2"),full.names = T)
 names_x <- lapply(path_tsm,basename)
 data_tsm <- read.table(path_tsm,sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
