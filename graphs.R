@@ -13,7 +13,7 @@ suppressMessages(if(!require(sf)){install.packages('sf'); library(sf)} else {lib
 suppressMessages(if(!require(grid)){install.packages('grid'); library(grid)} else {library(grid)})
 suppressMessages(if(!require(dplyr)){install.packages('dplyr'); library(dplyr)} else {library(dplyr)})
 suppressMessages(if(!require(tidyr)){install.packages('tidyr'); library(tidyr)} else {library(tidyr)})
-suppressMessages(if(!require(tidyr)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
+suppressMessages(if(!require(rgeos)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
 
 
 
