@@ -13,6 +13,7 @@ suppressMessages(if(!require(sf)){install.packages('sf'); library(sf)} else {lib
 suppressMessages(if(!require(grid)){install.packages('grid'); library(grid)} else {library(grid)})
 suppressMessages(if(!require(dplyr)){install.packages('dplyr'); library(dplyr)} else {library(dplyr)})
 suppressMessages(if(!require(tidyr)){install.packages('tidyr'); library(tidyr)} else {library(tidyr)})
+suppressMessages(if(!require(tidyr)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
 
 
 
@@ -32,7 +33,7 @@ dir.O.CPT <- paste0(path, 'Inputs/Cross_validated')
 
 
 # =-=-=-= final year 
-final_year<-2013 # año final del periodo de entrenamiento. #(modificar)
+final_year<-2013 # aÃ±o final del periodo de entrenamiento. #(modificar)
 
 
 
@@ -68,12 +69,12 @@ rasterize=function(dates) {
 }
 
 
-### Esta función convierte los datos de las estacines en datos trimestrales
+### Esta funciÃ³n convierte los datos de las estacines en datos trimestrales
 data_trim=function(Estaciones_C, a){ #Los argumentos son el conjunto de las estaciones 
   ## y el mes de incio del periodo (a)
   stations=Estaciones_C 
   stations=stations[-1:-2,] # Quite las dos primeras filas (coordenadas)
-  year=sort(rep(1981:2013,12)) # cree un vector para los años
+  year=sort(rep(1981:2013,12)) # cree un vector para los aÃ±os
   month=rep(1:12,length(1981:2013)) # cree el vector de meses
   data_station=cbind.data.frame(year,month,stations, row.names=NULL) # cree un data frame 
   pos=seq(a,dim(data_station)[1],12) #  posiciones ne las que se encuentra el mes a
@@ -96,7 +97,7 @@ xserie <- read.csv(paste0(dir.O.CPT, "/X_CCA_Map_Series.txt"),skip =2, header=T,
 yserie <- read.csv(paste0(dir.O.CPT,"/Y_CCA_Map_Series.txt"),skip =2, header=T, sep="")
 
 SST<-read.table(paste(dir.O.SST,"/DEF_Nov.tsv",sep=""),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999)
-## Conversión a raster
+## ConversiÃ³n a raster
 SST<-rasterize(SST)
 
 var_ocanoAt <-SST[[1:31]]
@@ -128,12 +129,12 @@ plot(colombia)
 cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   
   ocean=which(!is.na(var_ocanoAt[[1]][])) # tome las posiciones en las que la variable sea diferente de NA
-  correl=array(NA,length(ocean)) # relice un arreglo del tamaño de oceano 
+  correl=array(NA,length(ocean)) # relice un arreglo del tamaÃ±o de oceano 
   var_table=var_ocanoAt[] # Realice una tabla de la variable
   
   for(i in 1:length(ocean)){ # En todos los pixeles diferentes de NA
     var_pixel=var_table[ocean[i],] # Extraiga el pixel i 
-    correl[i]=cor(xserie$X1,var_pixel) # realice la correlación entre el pixel i el modo 1 de x
+    correl[i]=cor(xserie$X1,var_pixel) # realice la correlaciÃ³n entre el pixel i el modo 1 de x
   } # 
   
   correl_map=var_ocanoAt[[1]] # Cree un raster vacio 
@@ -146,8 +147,8 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   myPalette <-  colorRampPalette(c("navyblue","#2166AC", "dodgerblue3","lightblue", "lightcyan",  "white",  "yellow","orange", "orangered","#B2182B", "red4"))
   ewbrks <- c(seq(0,180,45), seq(225, 360, 45))
   nsbrks <- seq(-30,30,15)
-  ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x <= 180, paste(abs(x), "°E"), ifelse(x > 180, paste( abs(360-x), "°W"),x))))
-  nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(abs(x), "°N"),x))))
+  ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x <= 180, paste(abs(x), "Â°E"), ifelse(x > 180, paste( abs(360-x), "Â°W"),x))))
+  nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "Â°S"), ifelse(x > 0, paste(abs(x), "Â°N"),x))))
   
   
   # Realice el mapa de Correlaciones entre la variable y el modo 1 de x
@@ -169,19 +170,19 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   # Convierta los datos de las estaciones en trimestrales 
   data<-data_trim(Estaciones_C, a)
   
-  # La organización de la información se hace de acuerdo al mes de estudio.
+  # La organizaciÃ³n de la informaciÃ³n se hace de acuerdo al mes de estudio.
   if(a == 12 | lead== "MAM_Nov"| lead== "MAM_Sep"| lead== "JJA_Dec"){ 
     data<-data[data$years_y!=1981 & data$years_y!=1982,]
   } else  data<-data[data$years_y!=1981,]
   
   correl_y=0 # inicialice las correlaciones con x
   for(i in 2:length(data)){ # realice las correlaciones para todas las estaciones
-    correl_y[i-1]<-cor(data[,i],yserie$X1) # correlaciones entre la estación i y el modo 1 de x
+    correl_y[i-1]<-cor(data[,i],yserie$X1) # correlaciones entre la estaciÃ³n i y el modo 1 de x
   }
   
   Estacion=names(Estaciones_C) # extraiga los nombres de las estaciones
   coor<-data.frame(t(Estaciones_C[1:2,]), row.names = NULL) # extraiga las coordenadas
-  # Cree un data frame con la información de las estaciones y las correlaciones
+  # Cree un data frame con la informaciÃ³n de las estaciones y las correlaciones
   datos2<-data.frame(Estacion,Long=coor$cpt.X, Lat=coor$cpt.Y,  Correly=correl_y, row.names = NULL)
   datos2$Correly=round(datos2$Correly ,3) # redondee el valor de las correlaciones a tres cifras
   
@@ -189,8 +190,8 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   # geom_polygon(data = shp_colombia, aes(x=long, y = lat, group = group), color = "black", fill = "white")
   
   
-  # Realice el gráfico de las correlaciones entre las estaciones y el modo 1 de y 
-  p <- ggplot(colombia, aes(x=long,y=lat)) # gráfique el país
+  # Realice el grÃ¡fico de las correlaciones entre las estaciones y el modo 1 de y 
+  p <- ggplot(colombia, aes(x=long,y=lat)) # grÃ¡fique el paÃ­s
   p <- p + geom_polygon(aes(fill=hole,group=group),fill="snow") + 
     scale_fill_manual(values=c("grey 80","grey 80")) + 
     geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)
@@ -198,8 +199,8 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   
   ewbrks <-  seq (round(min(datos2$Long), 1) ,  round(max(datos2$Long), 1), 0.8)
   nsbrks <-  seq (round(min(datos2$Lat), 1) ,  round(max(datos2$Lat), 1), 0.8)
-  ewlbls <- unlist(lapply(ewbrks, function(x)  paste(abs(x), "°W")))
-  nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(abs(x), "°N"),x))))
+  ewlbls <- unlist(lapply(ewbrks, function(x)  paste(abs(x), "Â°W")))
+  nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "Â°S"), ifelse(x > 0, paste(abs(x), "Â°N"),x))))
   
   
   # Aqui se ingresan los datos de las estaciones
@@ -216,7 +217,7 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
     scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0))
   
   
-  ## Gráficos Componentes 
+  ## GrÃ¡ficos Componentes 
   
   # Se crea una trama de datos con la fecha y las componentes 
   datos<-data.frame(date=data$years_y, X=xserie$X1, Y=yserie$X1, row.names = NULL)
@@ -225,7 +226,7 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   datos[datos$X==-999.0000,2:3]=0 # quite los valore NA
   datos[,2:3]=datos[,2:3]*100 # multipliquelos * 100
   
-  # gráfico de los modos 
+  # grÃ¡fico de los modos 
   modos<-  ggplot(datos, aes(date)) +   geom_line(aes(y = X ),  colour="#B2182B" ) + 
     geom_line(aes(y = Y),  colour="chartreuse4")  + 
     geom_hline(yintercept = 0, colour="gray") + theme_bw() + 
@@ -272,7 +273,7 @@ ind <- all_ind %>%
 
 myPalette <-  colorRampPalette(c("navyblue","#2166AC", "dodgerblue3","lightblue", "lightcyan",  "white",  "yellow","orange", "orangered","#B2182B", "red4"))
 
-### Shp Perú
+### Shp PerÃº
 shp <- sf::st_read(dsn = paste0(path, 'Inputs/shp/PERU_DEPART/DEPARTAMENTO.shp')) %>%
   as('Spatial') 
 
