@@ -21,9 +21,9 @@ download_ERSST_CPT=function(firs_year,last_year,i_month,l_season,dir_save,m_for,
 #Example to download January from ERSST v4.0 
 
 area1 <- c(0,359,-30,30) #xmin, xmax, ymin, ymax
-i_month <- 2 #First month to download
+i_month <- 9 #First month to download
 l_season <- 3 #Length season (1, 2, 3. meses)
-m_for <- 4 #Month to forecast
+m_for <- 12 #Month to forecast
 l_for <- 3 #Length forescast 
 firs_year <- 1981 #Initial year
 last_year <- 2018 #Last year

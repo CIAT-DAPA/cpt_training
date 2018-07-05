@@ -2,7 +2,7 @@
 #  making predictor area selection 
 
 # Created by: Diego Fernando Agudelo (d.agudelo@cgiar.org)
-# Date: March 2018
+# Date: July 2018
 
 ########### Packages ###############
 
@@ -48,151 +48,6 @@ data_raster=function(dates){
   
 }
 
-quarterly_data=function(names,data){
-  
-  data=data[-1:-2,]
-  all_months=strsplit(names,"_")[[1]][1]
-  months=strsplit(all_months,"-")
-  number_months=sapply(months[[1]],function(x)which(month.abb==x))
-    
-  year=as.numeric(unlist(lapply(strsplit(data[-1,1],"-"),"[", 1),recursive=FALSE))
-  month=as.numeric(unlist(lapply(strsplit(data[-1,1],"-"),"[", 2),recursive=FALSE))
-  new_data=cbind.data.frame(year=year,month=month,sapply(data[-1,-1],as.numeric))
-  
-  pos_ini=which(new_data$month==number_months[1])
-  if(length(number_months)==2){
-    pos_data=sort(c(pos_ini,pos_ini+1))
-    }
-  if(length(number_months)==3){
-    pos_data=sort(c(pos_ini,pos_ini+1,pos_ini+2))
-  }
-  if(length(number_months)==1){
-    pos_data=sort(c(pos_ini))
-  }
-    
-    
-  data_out=data.frame(na.omit(aggregate(new_data[pos_data,-1:-2],by=list(sort(rep(1:(length(pos_ini)),length(number_months)))),sum))[,-1])
-  year_out=new_data[pos_ini,1][1:dim(data_out)[1]]
-  rownames(data_out)=year_out
-  
-  return(data_out)
-} 
-
-pca_x_svd=function(x,modos,pon){
-  
-  n=dim(x)[1]
-  p=dim(x)[2]
-  #pon_matrix=diag(pon)
-  pon_matrix=matrix(rep(pon,n),n,p,byrow = TRUE)
-  x0=scale(x)#*(sqrt(n)/sqrt(n-1))
-  #x_pon=t(pon_matrix%*%t(x0))
-  x_pon=pon_matrix*x0
-  svd_o <- fast.svd(x_pon)
-  comp  <- svd_o$u[,1:modos,drop=F]%*%diag(svd_o$d[1:modos],length(svd_o$d[1:modos]),length(svd_o$d[1:modos])) 
-  vect  <- svd_o$v[,1:modos]
-  output <- list(comp,vect)
-  return(output)
-  
-}
-
-pca_y_svd=function(x,modos){
-  
-  n=dim(x)[1]
-  x0=scale(x)#*(sqrt(n)/sqrt(n-1))
-  svd_o <- fast.svd(x0)
-  comp  <- svd_o$u[,1:modos,drop=F]%*%diag(svd_o$d[1:modos],length(svd_o$d[1:modos]),length(svd_o$d[1:modos])) 
-  vect  <- svd_o$v[,1:modos]
-  output <- list(comp,vect)
-  return(output)
-  
-}
-
-selection_area=function(X,Y,ponde,name){
-  
-  prec=str_split(name,"_")[[1]][1]
-  tsm=str_split(name,"_")[[1]][2]
-  na_1<-str_sub(prec,1,3)
-  na_2<-str_sub(tsm,1,3)
-  pos_1<-which(month.abb==na_1)
-  pos_2<-which(month.abb==na_2)
-  if(pos_2>pos_1){
-    x=X[-dim(X)[1],] ; y=Y[-1,]
-  }else{ x=X ; y=Y}
-  
-  
-  mode_x=10
-  mode_y=10 ; if(dim(y)[2] < mode_y)mode_y=dim(y)[2]
-  
-  y_pca=pca_y_svd(y,modos=mode_y)[[1]]
-  x_pca=pca_x_svd(x,modos=mode_x,ponde)[[1]]
-  all_cor=matrix(NA,mode_x*mode_y,dim(x)[2])
-  count=0
-  
-  for(i in 1:mode_x){
-    
-    for(j in 1:mode_y){
-      
-      canonico=cancor(x_pca[,1:i],y_pca[,1:j,drop=F])
-      x_center=scale(x_pca[,1:i],scale = F)
-      y_center=scale(y_pca[,1:j],scale = F)  
-      com_x=x_center%*%canonico$xcoef
-      com_y=y_center%*%canonico$ycoef
-      mode1=cbind(com_x[,1],com_y[,1])
-      cor_tsm=cor(x,mode1[,1])
-      count=count+1
-      all_cor[count,]=cor_tsm[,1]
-      
-    }
-    
-  }
-  print("Finalizo la selección del area para un mes")
-  cor_mean=apply(abs(all_cor),2,mean)
-  return(cor_mean)
-}
-
-files_x=function(raster,cor,na,years){
-  
-  coor_min=apply(coordinates(raster),2,min) 
-  coor_max=apply(coordinates(raster),2,max) 
-  coor_all=cbind(coor_min,coor_max)
-  
-  year_p=paste0("cpt:T=",years)
-  
-  for(i in seq(0,0.9,0.1)){
-    
-    pos_data=which(!is.na(values(raster)[,1]))
-    pos_selec=cor<quantile(cor,i)
-    pos_final=pos_data*pos_selec
-    val=values(raster)
-    val[pos_final,]=NA
-    val[which(is.na(val),arr.ind = T)]= -999
-    val_l=split(val,col(val))
-    
-    
-    lat=sort(seq(coor_all[2,1],coor_all[2,2],by=2),decreasing = T)
-    lon=sort(seq(coor_all[1,1],coor_all[1,2],by=2))
-    val_matrix=lapply(val_l,function(x)matrix(x,length(lat),length(lon),byrow=TRUE,dimnames=list(lat,lon)))
-    
-    
-    p="xmlns:cpt=http://iri.columbia.edu/CPT/v10/"
-    p1="cpt:nfields=1"
-    p2=paste0("cpt:field=ssta, ",year_p[1],", cpt:nrow=",length(lat),", cpt:ncol=",length(lon),", cpt:row=Y, cpt:col=X, cpt:units=Kelvin_scale, cpt:missing=-999")
-    
-    name_file=paste0(na,"_",i,".txt")
-    sink(name_file)
-    cat(p)
-    cat("\n")
-    cat(p1) 
-    cat("\n")
-    cat(p2) 
-    cat("\n")
-    u=Map(function(x,y){write.table(t(c(" ",lon)),sep="\t",col.names=F,row.names=F,quote = F);write.table(x,sep="\t",col.names=F,row.names=T,quote = F);cat(y);cat("\n")},val_matrix,c(year_p[-1],""))
-    sink()
-  }
-  
-  return("Successful process")   
-}
-
 run_cpt=function(x,y,run,output){
   
   file_y=read.table(y,sep="\t",dec=".",skip =3,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
@@ -204,7 +59,7 @@ run_cpt=function(x,y,run,output){
   
   GI=paste0(output,"_GI.txt"); pear=paste0(output,"_pearson.txt"); afc=paste0(output,"_2afc.txt")
   prob=paste0(output,"_prob.txt");roc_a=paste0(output,"_roc_a.txt");roc_b=paste0(output ,"_roc_b.txt")
-  
+  cca_load=paste0(output,"_load_x.txt"); cc=paste0(output,"_canonical.txt")
   
   cmd <- "@echo off
   (
@@ -256,6 +111,10 @@ run_cpt=function(x,y,run,output){
   echo 111
   echo 501
   echo %path_prob%
+  echo 411
+  echo %path_load%
+  echo 401
+  echo %path_cc%
   echo 0
   echo 0
   ) | CPT_batch.exe"
@@ -270,11 +129,71 @@ run_cpt=function(x,y,run,output){
   cmd<-gsub("%path_prob%",prob,cmd)
   cmd<-gsub("%modey%",mode_y,cmd)
   cmd<-gsub("%modecca%",mode_cca,cmd)
+  cmd<-gsub("%path_load%",cca_load,cmd)
+  cmd<-gsub("%path_cc%",cc,cmd)
   
   write(cmd,run)
   shell.exec(run)
   #system(run, ignore.stdout = T, show.output.on.console = T)
   
+}
+
+correl <- function(x,y){
+  
+  y[1,1]=""
+  loadings <- na.omit(y)
+  loadings[loadings==-999]=NA
+  pos=which(loadings[,1]=="")
+  if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
+  tables=lapply(list_dates,"[",-1,-1)
+  cor_ca=x[1:length(tables),1]
+  final=Reduce("+",Map(function(x,y) abs(x)*y ,tables,cor_ca))/sum(cor_ca)
+  final_vec=as.vector(as.matrix(t(final)))
+  
+  return(final_vec)
+}
+
+files_x=function(raster,cor,na,years){
+  
+  coor_min=apply(coordinates(raster),2,min) 
+  coor_max=apply(coordinates(raster),2,max) 
+  coor_all=cbind(coor_min,coor_max)
+  
+  year_p=paste0("cpt:T=",years)
+  
+  for(i in seq(0.1,0.9,0.1)){
+    
+    #pos_data=which(!is.na(values(raster)[,1]))
+    pos_selec=which(cor<quantile(cor,i,na.rm=T))
+    #pos_final=pos_data*pos_selec
+    val=values(raster)
+    val[pos_selec,]=NA
+    val[which(is.na(val),arr.ind = T)]= -999
+    val_l=split(val,col(val))
+    
+    
+    lat=sort(seq(coor_all[2,1],coor_all[2,2],by=2),decreasing = T)
+    lon=sort(seq(coor_all[1,1],coor_all[1,2],by=2))
+    val_matrix=lapply(val_l,function(x)matrix(x,length(lat),length(lon),byrow=TRUE,dimnames=list(lat,lon)))
+    
+    
+    p="xmlns:cpt=http://iri.columbia.edu/CPT/v10/"
+    p1="cpt:nfields=1"
+    p2=paste0("cpt:field=ssta, ",year_p[1],", cpt:nrow=",length(lat),", cpt:ncol=",length(lon),", cpt:row=Y, cpt:col=X, cpt:units=Celsius_scale, cpt:missing=-999")
+    
+    name_file=paste0(na,"_",i,".txt")
+    sink(name_file)
+    cat(p)
+    cat("\n")
+    cat(p1) 
+    cat("\n")
+    cat(p2) 
+    cat("\n")
+    u=Map(function(x,y){write.table(t(c(" ",lon)),sep="\t",col.names=F,row.names=F,quote = F);write.table(x,sep="\t",col.names=F,row.names=T,quote = F);cat(y);cat("\n")},val_matrix,c(year_p[-1],""))
+    sink()
+  }
+  
+  return("Successful process")   
 }
 
 best_GI=function(x){
@@ -317,14 +236,13 @@ save_areas=function(ras,cor,all_name){
   name=basename(all_name) 
   dec=substr(name,nchar(name)-2,nchar(name))
   cor_raster=ras[[1]]
-  pos=!is.na(values(cor_raster))
-  values(cor_raster)[pos]=cor
-  q1=quantile(cor,as.numeric(dec))
+  values(cor_raster)=cor
+  q1=quantile(cor,as.numeric(dec),na.rm=T)
   jBrewColors <- brewer.pal(n = 9, name = "Reds")
   tiff(paste0(all_name,".tiff"),compression = 'lzw',height = 6.5,width = 5.7,units="in", res=150)
   par(mfrow=c(2,1))
-  plot(cor_raster,main="Correlación promedio",col=jBrewColors,colNA="gray",legend.width=1,legend.shrink=1)
-  plot(cor_raster>= q1,main="Pixeles seleccionados",colNA="gray",legend=F,col=jBrewColors)
+  plot(cor_raster,main="Weighted loadings",col=jBrewColors,colNA="gray",legend.width=1,legend.shrink=1)
+  plot(cor_raster>= q1,main="Selected pixels",colNA="gray",legend=F,col=jBrewColors)
   dev.off()
   
   return(print("Área seleccionada guardada en formato Raster"))
@@ -339,64 +257,46 @@ lapply(folders,function(x) dir.create(paste0(x,"/ERSST_r")))
 lapply(folders,function(x) dir.create(paste0(x,"/output")))
 lapply(folders,function(x) dir.create(paste0(x,"/run")))
 path_x <- lapply(folders,function(x)list.files(paste0(x,"/ERSST"),full.names = T))
-names_x <- lapply(path_x,basename)
+names_x <- lapply(path_x,function(x) substr(basename(x),1,nchar(basename(x))-4))
 path_y <- lapply(folders,function(x)list.files(paste0(x,"/stations"),full.names = T))
+path_output <- Map(function(x,y) paste0(x,"/output/",y,"_0"),folders,names_x)
+path_run <- Map(function(x,y) paste0(x,"/run/",y,"_0",".bat"),folders,names_x)
 
 cat("\n Directorios cargados y carpetas creadas \n")
 
-prec_list <- lapply(path_y,function(x1)read.table(x1,sep="\t",dec=".",skip =3,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE))
+first_run <- Map(function(x,y,z,k)Map(run_cpt,x,y,z,k),path_x,path_y,path_run,path_output)
 
-cat("\n Datos de precipitacion cargados \n")
+cat("\n Primera corrida realizada")
 
 tsm_list <- lapply(path_x,function(x)lapply(x,function(x1)read.table(x1,sep="\t",dec=".",skip =3,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)))
 time=lapply(tsm_list,function(x)lapply(x,function(x1) as.character(x1[1,])[-1]))
 time_sel=lapply(time,function(x)lapply(x,function(x1)x1[x1!="NA"]))
 tsm_raster <- lapply(tsm_list,function(x)lapply(x,data_raster))
-tsm_list_table1 <- lapply(tsm_raster,function(x1)lapply(x1,function(x) t(getValues(x))))
-tsm_list_table_na <- lapply(tsm_list_table1,function(x1)lapply(x1,function(x) is.na(x)))
-pos <- lapply(tsm_list_table_na,function(x1)lapply(x1,function(x) colSums(x)==0 ))
-tsm_list_table <- Map(function(x,y)Map(function(x1,y1)x1[,y1],x,y),tsm_list_table1,pos)
-years_predictor <- lapply(tsm_list_table,function(x1)lapply(x1,function(x)as.numeric(substr(rownames(x),2,nchar(rownames(x))))))
 
-cat("\n Datos de la TSM organizados en formato Años X Pixeles \n")
+cat("\n Datos cargados en formato raster")
 
-prec_cumu <- Map(function(x,y)lapply(x,function(x)quarterly_data(x,y)),names_x,prec_list)
-years_response <- lapply(prec_cumu,function(x1)lapply(x1,function(x)as.numeric(row.names(x))))
+path_cc <- lapply(paste0(folders,"/output"),function(x)list.files(x,full.names = T,pattern = "canonical"))
+path_load <- lapply(paste0(folders,"/output"),function(x)list.files(x,full.names = T,pattern = "load"))
+cc <-  lapply(path_cc,function(x)lapply(x,function(x1)read.table(x1,sep="\t",dec=".",header = T,row.names = 1,skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)))
+load <- lapply(path_load,function(x)lapply(x,function(x1)read.table(x1,sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)))
+cor_tsm <- Map(function(x,y)Map(correl,x,y),cc,load)
 
-cat("\n Datos de precipitacion organizados de forma trimestral \n")
+cat("\n Correlación calculada")
 
-year_model <- Map(function(x,y) Map(function(x1,y1) years_model=intersect(x1,y1),x, y),years_predictor,years_response)
-years_final_res <- Map(function(x,y) Map(function(x1,y1) pos_x=x1%in%y1 ,x,y),years_response,year_model)
-years_final_prec=Map(function(x,y) Map(function(x1,y1) pos_x=x1%in%y1 ,x,y),years_predictor,year_model)
-data_tsm_final=Map(function(x,y) Map(function(x1,y1) x1[y1,] ,x,y),tsm_list_table,years_final_prec)
-data_res_final=Map(function(x,y) Map(function(x1,y1) x1[y1,] ,x,y),prec_cumu,years_final_res)
-
-cat("\n Periodo de entrenamiento generado \n")
-
-lat <-lapply(tsm_raster,function(x1)lapply(x1,function(x) coordinates(x)[,2]))
-ponderacion <-lapply(lat,function(x1)lapply(x1,function(x) sqrt(cos((pi/180)*x))))
-ponde <- Map(function(x,y)Map(function(x1,y1)x1[y1],x,y),ponderacion,pos)
-
-cat("\n Ponderación PCA \n")
-
-cor_tsm=Map(function(x,y,z,r)Map(selection_area,x,y,z,r),data_tsm_final,data_res_final,ponde,names_x)
-
-cat("\n Correlación de los pixeles calculada \n")
-
-names_selec <-Map(function(x,y) paste0(x,"/ERSST_r/",substr(y,1,nchar(y)-4)) ,folders,names_x)
+names_selec <-Map(function(x,y) paste0(x,"/ERSST_r/",substr(y,1,nchar(y))) ,folders,names_x)
 o_empty_1=Map(function(x,y,z,r)Map(files_x,x,y,z,r),tsm_raster,cor_tsm,names_selec,time_sel)
 
 cat("\n Archivos de la TSM construidos por deciles para CPT \n")
 
-path_newx <- lapply(folders,function(x)list.files(paste0(x,"/ERSST_r"),full.names = T))
-new_namesx <- lapply(path_newx,function(x) substr(basename(x),1,nchar(basename(x))-4))
-path_run <- Map(function(x,y) paste0(x,"/run/",y,".bat"),folders,new_namesx)
-path_output <- Map(function(x,y) paste0(x,"/output/",y),folders,new_namesx)
-o_empty_2 <-Map(function(x,y,z,k)Map(run_cpt,x,y,z,k),path_newx,path_y,path_run,path_output)
+path_x_2 <- lapply(folders,function(x)list.files(paste0(x,"/ERSST_r"),full.names = T))
+names_x_2 <- lapply(path_x_2,function(x) substr(basename(x),1,nchar(basename(x))-4))
+path_run_2 <- Map(function(x,y) paste0(x,"/run/",y,".bat"),folders,names_x_2)
+path_output_2 <- Map(function(x,y) paste0(x,"/output/",y),folders,names_x_2)
+o_empty_2 <-Map(function(x,y,z,k)Map(run_cpt,x,y,z,k),path_x_2,path_y,path_run_2,path_output_2)
 
-cat("\n Batch CPT realizado \n")
+cat("\n Segunda corrida realizada\n")
 
-folder_output <- Map(function(x,y) paste0(x,"/output/",substr(y,1,nchar(y)-4)),folders,names_x)
+folder_output <- Map(function(x,y) paste0(x,"/output/",substr(y,1,nchar(y))),folders,names_x)
 best_decil_l=lapply(folder_output,function(x)lapply(x,best_GI))
 best_decil=lapply(best_decil_l,unlist)
 
@@ -419,3 +319,6 @@ path_images <- Map(function(x,y) paste0(x,"/",y),folders,best_decil)
 o_empty_5 <- Map(function(x,y,z)Map(save_areas,x,y,z),tsm_raster,cor_tsm,path_images)
 
 cat("\n Pixeles selecionados almacenados en .tiff  \n")
+
+
+
