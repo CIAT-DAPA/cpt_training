@@ -31,7 +31,7 @@ transform_raster=function(x,y){
 data_raster=function(dates){
   
   year_month=dates[1,][!is.na(dates[1,])]
-  year=ifelse(substr(year_month[-1],6,7)=="12",substr(year_month[-1],9,12),substr(year_month[-1],1,4))
+  year=ifelse(substr(year_month[-1],6,7)=="12"& nchar(year_month[-1]) ==15,substr(year_month[-1],9,12),substr(year_month[-1],1,4))
   data_cpt1=na.omit(dates)
   pos=which(data_cpt1[,1]=="")
   pos=sort(rep(year,pos[2]-pos[1]))
