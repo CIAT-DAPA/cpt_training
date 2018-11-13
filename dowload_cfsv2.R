@@ -7,6 +7,8 @@ options(timeout=180)
 
 if(require(stringr)==FALSE){install.packages("stringr",dependencies = TRUE)}
 library("stringr")
+if(require(R.utils)==FALSE){install.packages("R.utils",dependencies = TRUE)}
+library(R.utils)
 
 #Function to download SST for one area
 download_CFSV2_CPT_1=function(firs_year,last_year,i_month,ic,dir_save,area1){
@@ -19,10 +21,10 @@ download_CFSV2_CPT_1=function(firs_year,last_year,i_month,ic,dir_save,area1){
   if(sum(trimestrel>12)>0)trimestrel[which(trimestrel>12)]=trimestrel[which(trimestrel>12)]-12
   path_save <- paste0(dir_save,"/",month.abb[ic],"_",paste(month.abb[trimestrel],collapse = "-"),".tsv.gz")
   download.file(route,path_save)
+  gunzip(path_save)
+  
   return(paste("Successful download",path_save))
 }
-
-
 
 #Ejemplo para descargar Feb_Abr-May-Jun (trimestre AMJ con condición inicial 
 #en Febrero para el área xmin =0, xmax =359, ymin= -30, ymax =30)
@@ -33,7 +35,11 @@ i_month <- 4
 ic <- 2
 firs_year <- 1981
 last_year <- 2018
-dir_save <- "C:/Users/lllanos/Desktop/ejercicios cpt/CFSv2"
+dir_main <- "D:/OneDrive - CGIAR/Desktop/test"
+nom_c <- "Corrida_1"
+dir.create(paste0(main_dir, "/CPT/",nom_c,"/CFSV2"), recursive = T)
+dir.create(paste0(main_dir, "/CPT/",nom_c,"/stations"), recursive = T)
+dir_save <- paste0(main_dir, "/CPT/",nom_c,"/CFSV2")
 
 download_CFSV2_CPT_1(firs_year,last_year,i_month,ic,dir_save,area1)
 

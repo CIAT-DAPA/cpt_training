@@ -17,7 +17,7 @@ suppressMessages(if(!require(rgeos)){install.packages('rgeos'); library(rgeos)} 
 
 
 
-path <- 'D:/graphs_data/' # Main folder
+path <- 'D:/OneDrive - CGIAR/Desktop/test/CPT/Corrida_1/output/complete/' # Main folder
 
 
 ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
@@ -29,7 +29,7 @@ predictor <- "SST_CFSv2"
 # files dor stations, SST, and CPT
 dir.Stations <- paste0(path, 'Inputs/dep') 
 dir.O.SST <-  paste0(path, 'Inputs/SST')  
-dir.O.CPT <- paste0(path, 'Inputs/Cross_validated')  
+dir.O.CPT <- 'D:/OneDrive - CGIAR/Desktop/test/CPT/Corrida_1/output/complete'
 
 
 # =-=-=-= final year 
