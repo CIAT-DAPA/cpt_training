@@ -27,13 +27,13 @@ predictor <- "SST_CFSv2"
 
 
 # files dor stations, SST, and CPT
-dir.Stations <- paste0(path, 'Inputs/dep') 
-dir.O.SST <-  paste0(path, 'Inputs/SST')  
+dir.Stations <-  "D:/OneDrive - CGIAR/Desktop/test/CPT/Corrida_1/stations" 
+dir.O.SST <-  "D:/OneDrive - CGIAR/Desktop/test/CPT/Corrida_1/CFSV2"
 dir.O.CPT <- 'D:/OneDrive - CGIAR/Desktop/test/CPT/Corrida_1/output/complete'
 
 
 # =-=-=-= final year 
-final_year<-2013 # año final del periodo de entrenamiento. #(modificar)
+final_year<-2015 # año final del periodo de entrenamiento. #(modificar)
 
 
 
@@ -41,7 +41,8 @@ final_year<-2013 # año final del periodo de entrenamiento. #(modificar)
 ### Transformar un archivo .tsv(CPT) en raster de CSFv2
 
 transform_raster=function(x){
-  mapa_base=raster()
+ 
+  mapa_base=raster(nrow=dim(x)[1],ncol=dim(x)[2])
   val=c(as.matrix(t(x),ncol=1,byrow = T))
   val=as.numeric(val)
   val[val==-999.000]=NA
@@ -51,21 +52,19 @@ transform_raster=function(x){
 
 
 rasterize=function(dates) { 
-  
-  if(require(raster)==FALSE){install.packages("raster")}
-  library("raster")
+ # dates=SST
   pos_years=!is.na(dates[1,])
   year_month=dates[1,][pos_years]
   if(substr(year_month[2],6,7)=="12"){year=as.numeric(substr(year_month[-1],1,4))+1
   }else{year=as.numeric(substr(year_month[-1],1,4))}
-  total_row_delete=c(-1,-3,-(which(dates[,1]=="90.0")-2),-which(dates[,1]=="-90.0"),-which(dates[,1]==""))
+  total_row_delete=c(-1,-3,-(which(dates[,1]=="30.0")-2),-which(dates[,1]==""))
   dates=dates[total_row_delete,-1]
-  list_dates=split(dates,sort(rep(year,180)))
+  list_dates=split(dates,sort(rep(year,61)))
   all_raster=lapply(list_dates,transform_raster)
   layers=stack(all_raster)
-  layers_crop=crop(layers,extent(-180, 180, -30, 30))
+ # layers_crop=crop(layers,extent(-180, 180, -30, 30))
   
-  return(layers_crop)
+  return(layers)
 }
 
 
@@ -93,20 +92,20 @@ data_trim=function(Estaciones_C, a){ #Los argumentos son el conjunto de las esta
 
 # =-=-=-=-=- read files 
 
-xserie <- read.csv(paste0(dir.O.CPT, "/X_CCA_Map_Series.txt"),skip =2, header=T, sep="")
-yserie <- read.csv(paste0(dir.O.CPT,"/Y_CCA_Map_Series.txt"),skip =2, header=T, sep="")
+xserie <- read.csv(paste0(dir.O.CPT, "/Feb_Apr-May-Jun_0_cca_serie_x.txt"),skip =2, header=T, sep="")
+yserie <- read.csv(paste0(dir.O.CPT,"/Feb_Apr-May-Jun_0_cca_serie_y.txt"),skip =2, header=T, sep="")
 
-SST<-read.table(paste(dir.O.SST,"/DEF_Nov.tsv",sep=""),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999)
+SST<-read.table(paste(dir.O.SST,"/Feb_Apr-May-Jun.tsv",sep=""),sep="\t",dec=".",skip =2,fill=TRUE,na.strings ="-999.000")
 ## Conversión a raster
 SST<-rasterize(SST)
 
-var_ocanoAt <-SST[[1:31]]
-b<-extent(-180, 180, -30, 30)
-var_ocanoAt=crop(var_ocanoAt, b)
+var_ocanoAt <-SST[[1:34]]
+# b<-extent(-180, 180, -30, 30)
+# var_ocanoAt=crop(var_ocanoAt, b)
 
 # estaciones
-Estaciones_C <- read.delim(paste0(dir.Stations,"/precip_valle.txt"),skip =3, header=T, sep="")
-a <- 12 # mes de inicio del trimestre
+Estaciones_C <- read.delim(paste0(dir.Stations,"/honduras_chirps_data.txt"),skip =3, header=T, sep="")
+a <- 4 # mes de inicio del trimestre
 
 
 ruta <- 'outputs/' # modificar
@@ -140,12 +139,11 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   correl_map=var_ocanoAt[[1]] # Cree un raster vacio 
   correl_map[]=NA 
   correl_map[ocean]=correl # Almacene en el raster los NA 
-  
-  
   extent(correl_map) <- extent(0,360,-30,30)
   
-  myPalette <-  colorRampPalette(c("navyblue","#2166AC", "dodgerblue3","lightblue", "lightcyan",  "white",  "yellow","orange", "orangered","#B2182B", "red4"))
-  ewbrks <- c(seq(0,180,45), seq(225, 360, 45))
+ # extent(correl_map) <- extent(0,360,-30,30)
+  
+    ewbrks <- c(seq(0,180,45), seq(225, 360, 45))
   nsbrks <- seq(-30,30,15)
   ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x <= 180, paste(abs(x), "°E"), ifelse(x > 180, paste( abs(360-x), "°W"),x))))
   nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(abs(x), "°N"),x))))
@@ -154,7 +152,7 @@ cca_maps<-function(var_ocanoAt, yserie, Estaciones_C, xserie, a){
   # Realice el mapa de Correlaciones entre la variable y el modo 1 de x
   Map_x<- rasterVis::gplot(correl_map) + geom_tile(aes(fill = value)) + coord_equal() + 
     labs(title="X Spatial Loadings (Mode 1)",x="",y=" ", fill = " ")  + theme(legend.key.height=unit(0.5,"cm"),legend.key.width=unit(2,"cm"),
-                                                                              legend.text=element_text(size=12),
+                                                                              legend.text=element_text(size=7),
                                                                               panel.background=element_rect(fill="white",colour="black"),
                                                                               axis.text=element_text(colour="black",size=12),
                                                                               axis.title=element_text(colour="black",size=12,face="bold"),
