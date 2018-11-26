@@ -16,6 +16,8 @@ if(require(raster)==FALSE){install.packages("raster")}
 library("raster")
 if(require(RColorBrewer)==FALSE){install.packages("RColorBrewer")}
 library("RColorBrewer")
+if(require(dplyr)==FALSE){install.packages("dplyr")}
+library("dplyr")
 
 ########### Functions ##############
 
@@ -59,7 +61,10 @@ run_cpt=function(x,y,run,output){
   
   GI=paste0(output,"_GI.txt"); pear=paste0(output,"_pearson.txt"); afc=paste0(output,"_2afc.txt")
   prob=paste0(output,"_prob.txt");roc_a=paste0(output,"_roc_a.txt");roc_b=paste0(output ,"_roc_b.txt")
-  cca_load=paste0(output,"_load_x.txt"); cc=paste0(output,"_canonical.txt")
+  pca_eigen_x=paste0(output,"_pca_eigen_x.txt"); pca_load_x=paste0(output,"_pca_load_x.txt"); pca_scores_x=paste0(output,"_pca_scores_x.txt")
+  pca_eigen_y=paste0(output,"_pca_eigen_y.txt"); pca_load_y=paste0(output,"_pca_load_y.txt"); pca_scores_y=paste0(output,"_pca_scores_y.txt")
+  cca_load_x=paste0(output,"_cca_load_x.txt"); cca_cc=paste0(output,"_cca_cc.txt"); cca_scores_x=paste0(output,"_cca_scores_x.txt")
+  cca_load_y=paste0(output,"_cca_load_y.txt"); cca_scores_y=paste0(output,"_cca_scores_y.txt")
   
   cmd <- "@echo off
   (
@@ -111,12 +116,30 @@ run_cpt=function(x,y,run,output){
   echo 11
   echo %path_roc_a%
   echo 111
+  echo 301
+  echo %path_pca_eigen_x%
+  echo 302
+  echo %path_pca_load_x%
+  echo 303
+  echo %path_pca_scores_x%
+  echo 311
+  echo %path_pca_eigen_y%
+  echo 312
+  echo %path_pca_load_y%
+  echo 313
+  echo %path_pca_scores_y%
+  echo 401
+  echo %path_cca_cc%
+  echo 411
+  echo %path_cca_load_x%
+  echo 412
+  echo %path_cca_scores_x%
+  echo 421
+  echo %path_cca_load_y%
+  echo 422
+  echo %path_cca_scores_y%
   echo 501
   echo %path_prob%
-  echo 411
-  echo %path_load%
-  echo 401
-  echo %path_cc%
   echo 0
   echo 0
   ) | CPT_batch.exe"
@@ -131,13 +154,24 @@ run_cpt=function(x,y,run,output){
   cmd<-gsub("%path_prob%",prob,cmd)
   cmd<-gsub("%modey%",mode_y,cmd)
   cmd<-gsub("%modecca%",mode_cca,cmd)
-  cmd<-gsub("%path_load%",cca_load,cmd)
-  cmd<-gsub("%path_cc%",cc,cmd)
+  cmd<-gsub("%path_cca_load_x%",cca_load_x,cmd)
+  cmd<-gsub("%path_cca_cc%",cca_cc,cmd)
+  
+  cmd<-gsub("%path_pca_eigen_x%",pca_eigen_x,cmd)
+  cmd<-gsub("%path_pca_load_x%",pca_load_x,cmd)
+  cmd<-gsub("%path_pca_scores_x%",pca_scores_x,cmd)
+  cmd<-gsub("%path_pca_eigen_y%",pca_eigen_y,cmd)
+  cmd<-gsub("%path_pca_load_y%",pca_load_y,cmd)
+  cmd<-gsub("%path_pca_scores_y%",pca_scores_y,cmd)
+  cmd<-gsub("%path_cca_scores_x%",cca_scores_x,cmd)
+  cmd<-gsub("%path_cca_scores_y%",cca_scores_y,cmd)
+  cmd<-gsub("%path_cca_load_y%",cca_load_y,cmd)
+  
   
   
   write(cmd,run)
-  shell.exec(run)
-  #system(run, ignore.stdout = T, show.output.on.console = T)
+  #shell.exec(run)
+  system2(run)
   
 }
 
@@ -213,25 +247,27 @@ best_GI=function(x){
 
 metricas=function(x){
   
-  p=read.table(paste0(x,"_pearson.txt"),header=T,dec=".",skip=2,col.names = c("id","Latitud","Longitud","pearson"))
-  k=read.table(paste0(x,"_2afc.txt"),header=T,dec=".",skip=2,col.names = c("id","Latitud","Longitud","kendall"))
+  p=read.table(paste0(x,"_pearson.txt"),header=T,dec=".",skip=2,col.names = c("id","latitud","longitud","pearson"))
+  k=read.table(paste0(x,"_2afc.txt"),header=T,dec=".",skip=2,col.names = c("id","latitud","longitud","kendall"))
   g=read.table(paste0(x,"_GI.txt"),header=T,dec=".",skip=5)
   goodness=g[dim(g)[1],dim(g)[2]]
-  p_k=merge(p,k)
-  data=cbind(file=basename(x),p_k,goodness)
+  roc_b=read.table(paste0(x,"_roc_b.txt"),header=T,dec=".",skip=2,col.names = c("id","latitud","longitud","roc_b"))
+  roc_a=read.table(paste0(x,"_roc_a.txt"),header=T,dec=".",skip=2,col.names = c("id","latitud","longitud","roc_a"))
   
-  return(data)
-}
-
-proba=function(x){
+  roc=merge(roc_b,roc_a)
+  p_k=merge(p,k)
+  all=merge(p_k,roc)
+  metrics=cbind(file=basename(x),all,goodness)
   
   below=read.table(paste0(x,"_prob.txt"),header=T,nrow=3,dec=".",fill=T,skip=3,check.names = FALSE)[-1:-2,]
   normal=read.table(paste0(x,"_prob.txt"),header=T,nrow=3,dec=".",fill=T,skip=8,check.names = FALSE)[-1:-2,]
   above=read.table(paste0(x,"_prob.txt"),header=T,nrow=3,dec=".",fill=T,skip=13,check.names = FALSE)[-1:-2,]
   coor=read.table(paste0(x,"_prob.txt"),header=T,nrow=2,dec=".",fill=T,skip=3,check.names = FALSE)
-  data=cbind(file=basename(x),id=names(below),latitud=as.matrix(coor)[1,],longitud=as.matrix(coor)[2,],below=as.matrix(below)[1,],normal=as.matrix(normal)[1,],above=as.matrix(above)[1,])
+  prob=cbind(id=names(below),below=as.matrix(below)[1,],normal=as.matrix(normal)[1,],above=as.matrix(above)[1,])
   
-  return(data)
+  all_data=merge(metrics,prob)
+  
+  return(all_data)
 }
 
 save_areas=function(ras,cor,all_name){
@@ -254,16 +290,18 @@ save_areas=function(ras,cor,all_name){
 
 ######## run ##############
 
-main_dir <- "C:/Users/dagudelo/Desktop/Codigos_TNC"
-folders <- list.files(paste0(main_dir,"/CPT"),full.names = T)
-lapply(folders,function(x) dir.create(paste0(x,"/CFSV2_r")))
-lapply(folders,function(x) dir.create(paste0(x,"/output")))
-lapply(folders,function(x) dir.create(paste0(x,"/run")))
-path_x <- lapply(folders,function(x)list.files(paste0(x,"/CFSV2"),full.names = T))
+main_dir <- "D:/OneDrive - CGIAR/Desktop/Codigos_TNC/cpt_r"
+setwd(main_dir)
+folders <- list.files(".",full.names = T)
+lapply(folders,function(x) dir.create(paste0(x,"/output/raw_output"),recursive = T))
+lapply(folders,function(x) dir.create(paste0(x,"/output/all_domain"),recursive = T))
+lapply(folders,function(x) dir.create(paste0(x,"/output/opt_domain"),recursive = T))
+lapply(folders,function(x) dir.create(paste0(x,"/bat_files")))
+path_x <- lapply(folders,function(x)list.files(paste0(x,"/input/cfsv2"),full.names = T))
 names_x <- lapply(path_x,function(x) substr(basename(x),1,nchar(basename(x))-4))
-path_y <- lapply(folders,function(x)list.files(paste0(x,"/stations"),full.names = T))
-path_output <- Map(function(x,y) paste0(x,"/output/",y,"_0"),folders,names_x)
-path_run <- Map(function(x,y) paste0(x,"/run/",y,"_0",".bat"),folders,names_x)
+path_y <- lapply(folders,function(x)list.files(paste0(x,"/input/stations"),full.names = T))
+path_output <- Map(function(x,y) paste0(x,"/output/raw_output/",y,"_0"),folders,names_x)
+path_run <- Map(function(x,y) paste0(x,"/bat_files/",y,"_0",".bat"),folders,names_x)
 
 cat("\n Directorios cargados y carpetas creadas \n")
 
@@ -278,47 +316,47 @@ tsm_raster <- lapply(tsm_list,function(x)lapply(x,data_raster))
 
 cat("\n Datos cargados en formato raster")
 
-path_cc <- lapply(paste0(folders,"/output"),function(x)list.files(x,full.names = T,pattern = "canonical"))
-path_load <- lapply(paste0(folders,"/output"),function(x)list.files(x,full.names = T,pattern = "load"))
+path_cc <- lapply(paste0(folders,"/output/raw_output"),function(x)list.files(x,full.names = T,pattern = "cca_cc"))
+path_load <- lapply(paste0(folders,"/output/raw_output"),function(x)list.files(x,full.names = T,pattern = "cca_load_x"))
 cc <-  lapply(path_cc,function(x)lapply(x,function(x1)read.table(x1,sep="\t",dec=".",header = T,row.names = 1,skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)))
 load <- lapply(path_load,function(x)lapply(x,function(x1)read.table(x1,sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)))
 cor_tsm <- Map(function(x,y)Map(correl,x,y),cc,load)
 
 cat("\n Correlación calculada")
 
-names_selec <-Map(function(x,y) paste0(x,"/CFSV2_r/",substr(y,1,nchar(y))) ,folders,names_x)
+names_selec <-Map(function(x,y) paste0(x,"/input/cfsv2/",substr(y,1,nchar(y))) ,folders,names_x)
 o_empty_1=Map(function(x,y,z,r)Map(files_x,x,y,z,r),tsm_raster,cor_tsm,names_selec,time_sel)
 
 cat("\n Archivos de la TSM construidos por deciles para CPT \n")
 
-path_x_2 <- lapply(folders,function(x)list.files(paste0(x,"/CFSV2_r"),full.names = T))
+path_x_2 <- lapply(folders,function(x)list.files(paste0(x,"/input/cfsv2"),full.names = T,pattern = "0."))
 names_x_2 <- lapply(path_x_2,function(x) substr(basename(x),1,nchar(basename(x))-4))
-path_run_2 <- Map(function(x,y) paste0(x,"/run/",y,".bat"),folders,names_x_2)
-path_output_2 <- Map(function(x,y) paste0(x,"/output/",y),folders,names_x_2)
+path_run_2 <- Map(function(x,y) paste0(x,"/bat_files/",y,".bat"),folders,names_x_2)
+path_output_2 <- Map(function(x,y) paste0(x,"/output/raw_output/",y),folders,names_x_2)
 o_empty_2 <-Map(function(x,y,z,k)Map(run_cpt,x,y,z,k),path_x_2,path_y,path_run_2,path_output_2)
 
 cat("\n Segunda corrida realizada\n")
 
-folder_output <- Map(function(x,y) paste0(x,"/output/",substr(y,1,nchar(y))),folders,names_x)
-best_decil_l=lapply(folder_output,function(x)lapply(x,best_GI))
-best_decil=lapply(best_decil_l,unlist)
+folder_output <- Map(function(x,y) paste0(x,"/output/raw_output/",substr(y,1,nchar(y))),folders,names_x)
+best_decil=lapply(folder_output,function(x)lapply(x,best_GI)) %>% lapply(.,unlist)
 
 cat("\n Mejor corrida seleccionada \n")
 
-best_path <- Map(function(x,y) paste0(x,"/output/",y),folders,best_decil)
+best_path <- Map(function(x,y) paste0(x,"/output/raw_output/",y),folders,best_decil)
 all_metricas<- lapply(best_path,function(x)lapply(x,metricas))
 metricas_final=lapply(all_metricas,function(x)do.call("rbind",x))
-o_empty_3=Map(function(x,y) write.csv(x,paste0(y,"/metrics.csv"),row.names=FALSE),metricas_final,folders)
+o_empty_3=Map(function(x,y) write.csv(x,paste0(y,"/output/opt_domain/metrics.csv"),row.names=FALSE),metricas_final,folders)
 
-cat("\n Metricas de validacion almacenadas \n")
+cat("\n Metricas con dominio optimizado almacenadas \n")
 
-all_prob<- lapply(best_path,function(x)lapply(x,proba))
-prob_final <- lapply(all_prob,function(x)do.call("rbind",x))
-o_empty_4 <- Map(function(x,y) write.csv(x,paste0(y,"/probabilities.csv"),row.names=FALSE),prob_final,folders)
+normal_path <- Map(function(x) paste0(x,"_0"),folder_output)
+all_metricas_n<- lapply(normal_path,function(x)lapply(x,metricas))
+metricas_final_n=lapply(all_metricas_n,function(x)do.call("rbind",x))
+o_empty_4=Map(function(x,y) write.csv(x,paste0(y,"/output/all_domain/metrics.csv"),row.names=FALSE),metricas_final_n,folders)
 
-cat("\n Pronosticos probabilisticos almacenados \n")
+cat("\n Metricas con todo el dominio almacenadas \n")
 
-path_images <- Map(function(x,y) paste0(x,"/",y),folders,best_decil)
+path_images <- Map(function(x,y) paste0(x,"/output/opt_domain/",y),folders,best_decil)
 o_empty_5 <- Map(function(x,y,z)Map(save_areas,x,y,z),tsm_raster,cor_tsm,path_images)
 
 cat("\n Pixeles selecionados almacenados en .tiff  \n")
