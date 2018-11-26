@@ -137,8 +137,7 @@ metric_map <- function(path_metric, path_output){
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,100)) + coord_equal()+
       labs(title="2AFC Score", x=" ", y=" ", col=" ")+theme( legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
-    
-    
+
     ind_1 <- ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=pearson),size=3) + 
@@ -162,22 +161,52 @@ metric_map <- function(path_metric, path_output){
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,1)) + coord_equal() + 
       labs(title="ROC Area (Above-Normal)", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
+    ind_4 <-ggplot(sel, aes(x=long,y=lat)) + 
+      geom_polygon(aes(fill=hole,group=group),fill="snow") +  
+      geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=hit_s),size=3) + 
+      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,100)) + coord_equal() + 
+      labs(title="Hit Score", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
-    # ,widths=c(4/9,2.5/9, 2.5/9),default.units=c('null','null')
-    layt<-grid.layout(nrow=2,ncol=2)
+    
+    ind_5 <-ggplot(sel, aes(x=long,y=lat)) + 
+      geom_polygon(aes(fill=hole,group=group),fill="snow") +  
+      geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=hit_ss),size=3) + 
+      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(-100,100)) + coord_equal() + 
+      labs(title="Hit Skill Score", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
+    
+
+    layt<-grid.layout(nrow=1,ncol=2)
     
     tiff(filename = paste0(path_output,"/" ,trimesters[i], "_metrics_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
     grid.newpage()
     pushViewport(viewport(layout=layt))
     print(ind,vp=viewport(layout.pos.row=1,layout.pos.col=1))
     print(ind_1,vp=viewport(layout.pos.row=1,layout.pos.col=2))
-    print(ind_2,vp=viewport(layout.pos.row=2,layout.pos.col=1))
-    print(ind_3,vp=viewport(layout.pos.row=2,layout.pos.col=2))
-    
+        
     dev.off()
     cat("Mapas Metricas realizados...")
     
     
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_roc_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
+    grid.newpage()
+    
+    print(ind_2,vp=viewport(layout.pos.row=1,layout.pos.col=1))
+    print(ind_3,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+    
+    dev.off()
+    cat("Mapas ROC realizados...")
+    
+    
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_hit_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
+    grid.newpage()
+    
+    print(ind_4,vp=viewport(layout.pos.row=1,layout.pos.col=1))
+    print(ind_5,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+    
+    dev.off()
+    cat("Mapas Hit realizados...")
     
     max_C<-apply(all_ind[,10:12], 1, max)
     cat<-ifelse(all_ind[,10]==max_C, "Below", ifelse(all_ind[,11]==max_C, "Normal", ifelse(all_ind[,12]==max_C, "Above",0)))
@@ -242,8 +271,7 @@ metric_map <- function(path_metric, path_output){
     cat("Mapas Probabilidades realizados...")
   }
  
-  
-  
-  
+
 }
 
+metric_map(path_metric, path_output)
