@@ -11,25 +11,51 @@ suppressMessages(if(!require(tidyr)){install.packages('tidyr'); library(tidyr)} 
 suppressMessages(if(!require(rgeos)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
 
 # CCA maps and Scree plots ------------------------------------------------
-cca_map <- function(path_raw , path_output) {
-  
- 
-  xserie <- read.csv(paste0(path_raw, "_cca_scores_x.txt"),skip =2, header=T, sep="")
-  yserie <- read.csv(paste0(path_raw,"_cca_scores_y.txt"),skip =2, header=T, sep="")
-  
-  xloadcca <-  read.csv(paste0(path_raw, "_cca_load_x.txt"),skip =2, header=T, sep="",check.names = F)
-  yloadcca <-  read.csv(paste0(path_raw, "_cca_load_y.txt"),skip =2, header=T, sep="")
-  
+
+eigen_plot <- function(path_raw, path_output){
   xeigen<- read.csv(paste0(path_raw, "_pca_eigen_x.txt"),skip =2, header=T, sep="")
   yeigen <- read.csv(paste0(path_raw,"_pca_eigen_y.txt"),skip =2, header=T, sep="")
   
   
+  datos_e <- data.frame(modes=xeigen$Mode, eigenx=xeigen$variance, eigeny=yeigen$variance, row.names = NULL)
+  
+  # gráfico de los modos 
+  modosx <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigenx ),  colour="firebrick3" ) + geom_point(aes(y = eigenx ),  colour="firebrick3" ) +
+    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
+    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "X Scree Plot") 
+  
+  
+  modosy <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigeny ),  colour="firebrick3" ) + geom_point(aes(y = eigeny ),  colour="firebrick3" ) +
+    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
+    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "Y Scree Plot") 
+  
+  layt<-grid.layout(nrow=1,ncol=2)
+  trim_n = unlist(strsplit(path_raw,"/")) 
+  trim_n = trim_n[length(trim_n)]
+  
+  tiff(filename = paste0(path_output,"/",trim_n, "_eigen_plot.tif"), width = 1500, height = 800,res=150,compression = 'lzw')
+  grid.newpage()
+  pushViewport(viewport(layout=layt))
+  print(modosx,vp=viewport(layout.pos.row=1,layout.pos.col=1))
+  print(modosy,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+  dev.off()
+  cat("Scree plots realizados...\n")
+  
+}
+
+cca_map <- function(path_raw , path_output,i, coor) {
+  
+  xserie <- read.csv(paste0(path_raw, "_cca_scores_x.txt"),skip =2, header=T, sep="")
+  yserie <- read.csv(paste0(path_raw,"_cca_scores_y.txt"),skip =2, header=T, sep="")
+  
+  yloadcca <-  read.csv(paste0(path_raw, "_cca_load_y.txt"),skip =2, header=T, sep="")
+
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
   ## CCA Maps
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
-  x = xloadcca
+  x = tables[[i]]
   
-  ext = c(min(as.numeric(rownames(x))),max(as.numeric(rownames(x))),min(as.numeric(colnames(x))),max(as.numeric(colnames(x))))
+  ext = c(min(as.numeric(coor[[2]])),max(as.numeric(coor[[2]])),min(as.numeric(coor[[1]])),max(as.numeric(coor[[1]])))
   mapa_base=raster(nrow=dim(x)[1],ncol=dim(x)[2])
   extent(mapa_base) <- extent(ext[3],ext[4],ext[1],ext[2])
   val=c(as.matrix(t(x),ncol=1,byrow = T))
@@ -42,13 +68,19 @@ cca_map <- function(path_raw , path_output) {
   #myPalette <-  colorRampPalette(c("navyblue","#2166AC", "dodgerblue3","lightblue", "lightcyan",  "white",  "yellow","orange", "orangered","#B2182B", "red4"))
   myPalette <-  colorRampPalette(c("dodgerblue4", "dodgerblue1","deepskyblue","darkslategray1", "lightcyan",  "white",  "lemonchiffon1","khaki","sandybrown", "darkorange2","firebrick2"))
   
+ 
   Map_x<- rasterVis::gplot(mapa_base) + geom_tile(aes(fill = value)) + coord_equal() + 
-    labs(title="X Spatial Loadings (Mode 1)",x="",y=" ", fill = " ")  + theme(legend.key.height=unit(0.5,"cm"),legend.key.width=unit(2,"cm"),
+    labs(title=paste0("X Spatial Loadings (Mode ",i,")"),x="",y=" ", fill = " ")  + theme(legend.key.height=unit(0.5,"cm"),legend.key.width=unit(2,"cm"),
                                                                               legend.text=element_text(size=10),
+                                                                              panel.background=element_rect(fill="white",colour="black"),
+                                                                              axis.text=element_text(colour="black",size=12),
+                                                                              axis.title=element_text(colour="black",size=12,face="bold"),
+                                                                              legend.position = "bottom", 
                                                                               legend.title = element_text(size = 12.5))  +
-                                                                        scale_fill_gradientn(colours =myPalette(100), limits=c(-1,1))   
+    scale_fill_gradientn(colours =myPalette(100), limits=c(-1,1))
   
-  yloadcca$val = yloadcca$X1/max(abs(yloadcca$X1),na.rm=T)
+  
+  yloadcca$val = yloadcca[,i+3]/max(abs(yloadcca[,i+3]),na.rm=T)
   y = yloadcca
   ext_y = c(min(as.numeric(y$Latitude))-0.5,max(as.numeric(y$Latitude))+0.5,min(as.numeric(y$Longitude))-0.5,max(as.numeric(y$Longitude))+0.5)
   
@@ -57,7 +89,7 @@ cca_map <- function(path_raw , path_output) {
   sel <<-new_map[new_map$lat>ext_y[1] & new_map$lat<ext_y[2] & new_map$long>ext_y[3] & new_map$long<ext_y[4],]
   
    
-  p <- ggplot(sel, aes(x=long,y=lat)) # gráfique el pa�???s
+  p <- ggplot(sel, aes(x=long,y=lat)) 
   p <- p + geom_polygon(aes(fill=hole,group=group),fill="snow") + 
     scale_fill_manual(values=c("grey 80","grey 80"))  
    
@@ -70,13 +102,13 @@ cca_map <- function(path_raw , path_output) {
                  axis.text=element_text(colour="black",size=12),
                  axis.title=element_text(colour="black",size=12,face="bold"),
                  #legend.position = "bottom", 
-                 legend.title = element_text(size = 12)) + labs(title="Y Spatial Loadings (Mode 1)",  x= "", y= "", colour="") 
+                 legend.title = element_text(size = 12)) + labs(title=paste0("Y Spatial Loadings (Mode ",i,")"),  x= "", y= "", colour="") 
   
   
   ## Gráficos Componentes 
   
   # Se crea una trama de datos con la fecha y las componentes 
-  datos <- data.frame(X=xserie$X1, Y=yserie$X1, row.names = NULL)
+  datos <- data.frame(X=xserie[,i], Y=yserie[,i], row.names = NULL)
   datos$X = round(datos$X ,4) # redondee los modos 
   datos$Y = round(datos$Y ,4) # redondee los modos 
   datos$date = as.numeric(substring(rownames(xserie),1,4))
@@ -86,22 +118,20 @@ cca_map <- function(path_raw , path_output) {
   # quite los valore NA
   datos[,1:2]=datos[,1:2]*100 # multipliquelos * 100
   
+  modos <-  ggplot(datos, aes(date,group = 1)) +   geom_line(aes(y = X ),  colour="firebrick3" ) + 
+    geom_line(aes(y = Y),  colour="forestgreen")  + 
+    geom_hline(yintercept = 0, colour="gray") + theme_bw() + 
+    theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1, size = 12)) +
+    guides(colour = guide_legend(title = " ")) + labs(subtitle=paste("Canonical Correlation = ", round(cor(datos$X,datos$Y),3),sep = ""),x="",y="Scores (X red; Y green) (*100)",
+                                                      title = "Temporal Scores (Mode 1)") + scale_x_continuous(breaks = seq(min(datos$date),max(datos$date),3))
   
-  datos_e <- data.frame(modes=xeigen$Mode, eigenx=xeigen$variance, eigeny=yeigen$variance, row.names = NULL)
-  
-  # gráfico de los modos 
-  modosx <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigenx ),  colour="firebrick3" ) + geom_point(aes(y = eigenx ),  colour="firebrick3" ) +
-     theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
-    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "X Scree Plot") 
-  
-  
-  modosy <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigeny ),  colour="firebrick3" ) + geom_point(aes(y = eigeny ),  colour="firebrick3" ) +
-    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
-    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "Y Scree Plot") 
   
   layt<-grid.layout(nrow=1,ncol=3,widths=c(4/9,2.5/9, 2.5/9),default.units=c('null','null'))
  
-  tiff(filename = paste0(path_output, "/cca_maps.tif"), width = 1700, height = 400,res=100,compression = 'lzw')
+  trim_n = unlist(strsplit(path_raw,"/")) 
+  trim_n = trim_n[length(trim_n)]
+  
+  tiff(filename = paste0(path_output, "/",trim_n,"_mode_",i,"_cca_maps.tif"), width = 1700, height = 400,res=100,compression = 'lzw')
   grid.newpage()
   pushViewport(viewport(layout=layt))
   print(Map_x,vp=viewport(layout.pos.row=1,layout.pos.col=1))
@@ -110,20 +140,22 @@ cca_map <- function(path_raw , path_output) {
   dev.off()
   cat("Mapas CCA realizados...\n")
   
-  layt<-grid.layout(nrow=1,ncol=2)
-  
-  tiff(filename = paste0(path_output, "/eigen_plot.tif"), width = 1500, height = 800,res=150,compression = 'lzw')
-  grid.newpage()
-  pushViewport(viewport(layout=layt))
-  print(modosx,vp=viewport(layout.pos.row=1,layout.pos.col=1))
-  print(modosy,vp=viewport(layout.pos.row=1,layout.pos.col=2))
-  dev.off()
-  cat("Scree plots realizados...\n")
+ 
 
 }
 
 # Metrics maps ------------------------------------------------------------
-metric_map <- function(path_metric, path_output){
+
+metric_map <- function(path_metric, path_output,path_raw){
+  
+  yloadcca <-  read.csv(paste0(path_raw, "_cca_load_y.txt"),skip =2, header=T, sep="")
+  
+  y = yloadcca
+  ext_y = c(min(as.numeric(y$Latitude))-0.5,max(as.numeric(y$Latitude))+0.5,min(as.numeric(y$Longitude))-0.5,max(as.numeric(y$Longitude))+0.5)
+  
+  sPDF <<- getMap()  
+  new_map = fortify(sPDF)
+  sel <<-new_map[new_map$lat>ext_y[1] & new_map$lat<ext_y[2] & new_map$long>ext_y[3] & new_map$long<ext_y[4],]
   
    
   all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv')) 
@@ -141,7 +173,7 @@ metric_map <- function(path_metric, path_output){
     ind <- ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(group=group),fill="snow") + 
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=kendall),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,100)) + coord_equal()+
       labs(title="2AFC Score", x=" ", y=" ", col=" ")+theme( legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
@@ -290,23 +322,49 @@ metric_map <- function(path_metric, path_output){
 
 }
 
-
 # Run ---------------------------------------------------------------------
+# folders <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone"
+# normal_path <-"D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
 
 # Run all_domain
 path_metric <-  paste0(folders,"/output/all_domain")
 path_output <-  paste0(folders,"/output/all_domain")
 path_raw <- normal_path
 
-cca_map(path_raw,path_output)
-metric_map(path_metric, path_output)
+
+y <- read.table(paste0(path_raw, "_cca_load_x.txt"),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
+y[1,1]=""
+loadings <- na.omit(y)
+loadings[loadings==-999]=NA
+pos=which(loadings[,1]=="")
+if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
+coor <- list(list_dates[[1]][1,][-1],list_dates[[1]][,1][-1])
+
+tables <- lapply(list_dates,"[",-1,-1)
+
+
+
+for(i in 1:length(tables)) cca_map(path_raw,path_output,i,coor)
+metric_map(path_metric, path_output, path_raw)
+eigen_plot(path_raw,path_output)
 
 #Run opt_domain
-
+best_path<- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0.7"
 path_metric <-  paste0(folders,"/output/opt_domain")
 path_output <-  paste0(folders,"/output/opt_domain")
 path_raw <- best_path
 
-cca_map(path_raw,path_output)
-metric_map(path_metric, path_output)
+y <- read.table(paste0(path_raw, "_cca_load_x.txt"),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
+y[1,1]=""
+loadings <- na.omit(y)
+loadings[loadings==-999]=NA
+pos=which(loadings[,1]=="")
+if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
+coor <- list(list_dates[[1]][1,][-1],list_dates[[1]][,1][-1])
+
+tables <- lapply(list_dates,"[",-1,-1)
+
+for(i in 1:length(tables)) cca_map(path_raw,path_output,i,coor)
+metric_map(path_metric, path_output, path_raw)
+eigen_plot(path_raw,path_output)
 
