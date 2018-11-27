@@ -10,9 +10,9 @@ suppressMessages(if(!require(dplyr)){install.packages('dplyr'); library(dplyr)} 
 suppressMessages(if(!require(tidyr)){install.packages('tidyr'); library(tidyr)} else {library(tidyr)})
 suppressMessages(if(!require(rgeos)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
 
-path_metric <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/Codigos_TNC/cpt_r/zone/output/all_domain"
-path_output <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/Codigos_TNC/cpt_r/zone/output/all_domain"
-path_raw <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/Codigos_TNC/cpt_r/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
+path_metric <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/all_domain"
+path_output <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/all_domain"
+path_raw <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
 
 cca_map <- function(path_raw , path_output) {
   
@@ -114,7 +114,7 @@ cca_map <- function(path_raw , path_output) {
   
 }
 
-cca_map(path_raw)
+cca_map(path_raw,path_output)
 
 #### Indicadores
 metric_map <- function(path_metric, path_output){
@@ -141,7 +141,7 @@ metric_map <- function(path_metric, path_output){
     ind_1 <- ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=pearson),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(-1,1)) + coord_equal() + 
       labs(title="Pearson's Correlation", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
@@ -149,7 +149,7 @@ metric_map <- function(path_metric, path_output){
     ind_2 <-ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=roc_b),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,1)) + coord_equal() + 
       labs(title="ROC Area (Below-Normal)", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
@@ -157,14 +157,14 @@ metric_map <- function(path_metric, path_output){
     ind_3 <-ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=roc_a),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,1)) + coord_equal() + 
       labs(title="ROC Area (Above-Normal)", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
     ind_4 <-ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=hit_s),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(0,100)) + coord_equal() + 
       labs(title="Hit Score", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
@@ -172,38 +172,41 @@ metric_map <- function(path_metric, path_output){
     ind_5 <-ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow") +  
       geom_point(data=all_ind, aes(x= longitud, y= latitud, group= 1 ,col=hit_ss),size=3) + 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3)  + 
+      geom_path(aes(long,lat,group=group),color="black",size=0.3)  + 
       theme_bw() + scale_color_gradientn(colours =myPalette(100), limits=c(-100,100)) + coord_equal() + 
       labs(title="Hit Skill Score", x=" ", y=" ", col=" ")+ theme(legend.position = "bottom",legend.key.width  = unit(1.5, "cm"))
     
 
-    layt<-grid.layout(nrow=1,ncol=2)
+    layt<-grid.layout(nrow=2,ncol=1)
     
-    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_metrics_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_metrics_maps.tif"), width = 800, height = 800,res=130,compression = 'lzw')
     grid.newpage()
     pushViewport(viewport(layout=layt))
     print(ind,vp=viewport(layout.pos.row=1,layout.pos.col=1))
-    print(ind_1,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+    print(ind_1,vp=viewport(layout.pos.row=2,layout.pos.col=1))
         
     dev.off()
-    cat("Mapas Metricas realizados...")
+    cat("Mapas Metricas realizados...\n")
     
+      
+    layt<-grid.layout(nrow=2,ncol=1)
     
-    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_roc_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_roc_maps.tif"), width = 800, height = 800,res=130,compression = 'lzw')
     grid.newpage()
-    
+    pushViewport(viewport(layout=layt))
     print(ind_2,vp=viewport(layout.pos.row=1,layout.pos.col=1))
-    print(ind_3,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+    print(ind_3,vp=viewport(layout.pos.row=2,layout.pos.col=1))
     
     dev.off()
     cat("Mapas ROC realizados...")
     
+    layt<-grid.layout(nrow=2,ncol=1)
     
-    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_hit_maps.tif"), width = 800, height = 800,res=100,compression = 'lzw')
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_hit_maps.tif"), width = 800, height = 800,res=130,compression = 'lzw')
     grid.newpage()
-    
+    pushViewport(viewport(layout=layt))
     print(ind_4,vp=viewport(layout.pos.row=1,layout.pos.col=1))
-    print(ind_5,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+    print(ind_5,vp=viewport(layout.pos.row=2,layout.pos.col=1))
     
     dev.off()
     cat("Mapas Hit realizados...")
@@ -217,8 +220,12 @@ metric_map <- function(path_metric, path_output){
     p <- ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow")
     
-    maxi <- p + geom_point(data=maximos, aes(x=all_ind$longitud, y=all_ind$latitud,size=max_C, colour=cat))+ 
-      geom_path(aes(long,lat,group=group,fill=hole),color="black",size=0.3) + scale_colour_manual(values = c("steelblue3","lightgreen","tomato2")) +
+    maxi <- p + geom_point(data=maximos, aes(x=all_ind$longitud, y=all_ind$latitud,size=max_C, colour=cat))+ scale_size_continuous(name = " ",
+                                                                                                                                   breaks = seq(25,100,25),
+                                                                                                                                   limits = c(0, 100),
+                                                                                                                                   labels = c("0-25", "25-50", "50-75","75-100"),
+                                                                                                                                   range = c(0, 5) )+
+      geom_path(aes(long,lat,group=group),color="black",size=0.3) + scale_colour_manual(values = c("steelblue3","lightgreen","tomato2")) +
       coord_equal() + theme( legend.key.height=unit(1,"cm"),legend.key.width=unit(0.5,"cm"),
                              legend.text=element_text(size=8),
                              panel.background=element_rect(fill="white",colour="black"),
@@ -227,9 +234,10 @@ metric_map <- function(path_metric, path_output){
                              #legend.position = "bottom", 
                              legend.title=element_blank())  + labs(title="Probabilistic Forecast")+labs( x=" ", y=" ", size=" ")
     
-    
-    
-    tiff(paste0(path_output,"/" ,trimesters[i], "_probabilistic_maps.tif"),width = 3000, height = 3000, units = "px", res = 300,compression = 'lzw')
+    seq(0,100,25)  
+    seq(25,75,25)
+    c("0-25", "25-50", "50-75","75-100")
+    tiff(paste0(path_output,"/" ,trimesters[i], "_probabilistic_maps.tif"),width = 3000, height = 3000, units = "px", res = 400,compression = 'lzw')
     print(maxi)
     dev.off()  
     cat("Mapas Probabilistico realizados...")
@@ -260,7 +268,7 @@ metric_map <- function(path_metric, path_output){
     
     layt<-grid.layout(nrow=1,ncol=3)
     
-    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_probabilities_maps.tif"), width = 1800, height = 800,res=100,compression = 'lzw')
+    tiff(filename = paste0(path_output,"/" ,trimesters[i], "_probabilities_maps.tif"), width = 1400, height = 800,res=130,compression = 'lzw')
     grid.newpage()
     pushViewport(viewport(layout=layt))
     print(below,vp=viewport(layout.pos.row=1,layout.pos.col=1))
