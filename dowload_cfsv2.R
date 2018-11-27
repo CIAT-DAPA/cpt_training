@@ -18,7 +18,7 @@ nom_c <- "Corrida_1" # Modifique esta línea con el nombre que desee
 
 dir.create(paste0(main_dir,"/", nom_c,"/input/sst_cfsv2"), recursive = T)
 dir.create(paste0(main_dir,"/", nom_c,"/input/stations"), recursive = T)
-dir_save <- paste0(main_dir,"/", nom_c,"/sst_cfsv2")
+dir_save <- paste0(main_dir,"/", nom_c,"/input/sst_cfsv2")
 
 
 # Función para descargar una área de la TSM del modelo CFSv2 --------------

@@ -18,7 +18,7 @@ nom_c <- "Corrida_1" # Modifique esta línea con el nombre que desee
 
 dir.create(paste0(main_dir,"/",  nom_c,"/input/sst_ersst"), recursive = T)
 dir.create(paste0(main_dir,"/", nom_c,"/input/stations"), recursive = T)
-dir_save <- paste0(main_dir,"/", nom_c,"/sst_ersst")
+dir_save <- paste0(main_dir,"/", nom_c,"/input/sst_ersst")
 
 
 download_ERSST_CPT=function(firs_year,last_year,i_month,l_season,dir_save,m_for,l_for,area1){
