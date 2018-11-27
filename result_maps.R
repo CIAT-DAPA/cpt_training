@@ -10,10 +10,7 @@ suppressMessages(if(!require(dplyr)){install.packages('dplyr'); library(dplyr)} 
 suppressMessages(if(!require(tidyr)){install.packages('tidyr'); library(tidyr)} else {library(tidyr)})
 suppressMessages(if(!require(rgeos)){install.packages('rgeos'); library(rgeos)} else {library(rgeos)})
 
-path_metric <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/all_domain"
-path_output <-  "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/all_domain"
-path_raw <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
-
+# CCA maps and Scree plots ------------------------------------------------
 cca_map <- function(path_raw , path_output) {
   
  
@@ -125,9 +122,7 @@ cca_map <- function(path_raw , path_output) {
 
 }
 
-cca_map(path_raw,path_output)
-
-#### Indicadores
+# Metrics maps ------------------------------------------------------------
 metric_map <- function(path_metric, path_output){
   
    
@@ -295,4 +290,23 @@ metric_map <- function(path_metric, path_output){
 
 }
 
+
+# Run ---------------------------------------------------------------------
+
+# Run all_domain
+path_metric <-  paste0(folders,"/output/all_domain")
+path_output <-  paste0(folders,"/output/all_domain")
+path_raw <- normal_path
+
+cca_map(path_raw,path_output)
 metric_map(path_metric, path_output)
+
+#Run opt_domain
+
+path_metric <-  paste0(folders,"/output/opt_domain")
+path_output <-  paste0(folders,"/output/opt_domain")
+path_raw <- best_path
+
+cca_map(path_raw,path_output)
+metric_map(path_metric, path_output)
+
