@@ -39,7 +39,7 @@ eigen_plot <- function(path_raw, path_output){
   print(modosx,vp=viewport(layout.pos.row=1,layout.pos.col=1))
   print(modosy,vp=viewport(layout.pos.row=1,layout.pos.col=2))
   dev.off()
-  cat("Scree plots realizados...\n")
+  cat(paste0(trim_n)," Scree plots realizados...\n")
   
 }
 
@@ -138,7 +138,7 @@ cca_map <- function(path_raw , path_output,i, coor) {
   print(modos,vp=viewport(layout.pos.row=1,layout.pos.col=2))
   print(p,vp=viewport(layout.pos.row=1,layout.pos.col=3))
   dev.off()
-  cat("Mapas CCA realizados...\n")
+  cat(paste0(trim_n), " Mapas CCA realizados...\n")
   
  
 
@@ -243,7 +243,7 @@ metric_map <- function(path_metric, path_output,path_raw){
     print(ind_1,vp=viewport(layout.pos.row=2,layout.pos.col=1))
         
     dev.off()
-    cat("Mapas Metricas realizados...\n")
+    cat(paste0(trimesters[i])," Mapas Metricas realizados...\n")
     
       
     layt<-grid.layout(nrow=2,ncol=1)
@@ -255,7 +255,7 @@ metric_map <- function(path_metric, path_output,path_raw){
     print(ind_3,vp=viewport(layout.pos.row=2,layout.pos.col=1))
     
     dev.off()
-    cat("Mapas ROC realizados...\n")
+    cat(paste0(trimesters[i])," Mapas ROC realizados...\n")
     
     layt<-grid.layout(nrow=2,ncol=1)
     
@@ -266,23 +266,19 @@ metric_map <- function(path_metric, path_output,path_raw){
     print(ind_5,vp=viewport(layout.pos.row=2,layout.pos.col=1))
     
     dev.off()
-    cat("Mapas Hit realizados...\n")
+    cat(paste0(trimesters[i])," Mapas Hit realizados...\n")
     
-    max_C<-apply(all_ind[,10:12], 1, max)
-    cat<-ifelse(all_ind[,10]==max_C, "Below", ifelse(all_ind[,11]==max_C, "Normal", ifelse(all_ind[,12]==max_C, "Above",0)))
+    max_C<-apply(all_ind[,c("below","normal","above")], 1, max)
+    cat<-ifelse(all_ind[,"below"]==max_C, "Below", ifelse(all_ind[,"normal"]==max_C, "Normal", ifelse(all_ind[,"above"]==max_C, "Above",0)))
     maximos<-cbind.data.frame(all_ind$id, all_ind$longitud, all_ind$latitud, max_C, cat)
     
     # Aqui se ingresan los datos de las estaciones
-    maximos$cat = factor(maximos$cat, levels = c("Above", "Normal", "Below"))
+    maximos$cat = factor(maximos$cat, levels = c("Below", "Normal", "Above"))
     p <- ggplot(sel, aes(x=long,y=lat)) + 
       geom_polygon(aes(fill=hole,group=group),fill="snow")
     
-    maxi <- p + geom_point(data=maximos, aes(x=all_ind$longitud, y=all_ind$latitud,size=max_C, colour=cat))+ scale_size_continuous(name = " ",
-                                                                                                                                   breaks = seq(25,100,25),
-                                                                                                                                   limits = c(0, 100),
-                                                                                                                                   labels = c("0-25", "25-50", "50-75","75-100"),
-                                                                                                                                   range = c(0, 5) )+
-      geom_path(aes(long,lat,group=group),color="black",size=0.3) + scale_colour_manual(values = c("steelblue3","lightgreen","tomato2")) +
+    maxi <- p + geom_point(data=maximos, aes(x=all_ind$longitud, y=all_ind$latitud, colour=cat))+
+      geom_path(aes(long,lat,group=group),color="black",size=0.3) + scale_colour_manual(values = c("tomato2","lightgreen","steelblue3")) +
       coord_equal() + theme( legend.key.height=unit(1,"cm"),legend.key.width=unit(0.5,"cm"),
                              legend.text=element_text(size=8),
                              panel.background=element_rect(fill="white",colour="black"),
@@ -291,13 +287,10 @@ metric_map <- function(path_metric, path_output,path_raw){
                              #legend.position = "bottom", 
                              legend.title=element_blank())  + labs(title="Probabilistic Forecast")+labs( x=" ", y=" ", size=" ")
     
-    seq(0,100,25)  
-    seq(25,75,25)
-    c("0-25", "25-50", "50-75","75-100")
     tiff(paste0(path_output,"/" ,trimesters[i], "_probabilistic_maps.tif"),width = 3000, height = 3000, units = "px", res = 400,compression = 'lzw')
     print(maxi)
     dev.off()  
-    cat("Mapas Probabilistico realizados...\n")
+    cat(paste0(trimesters[i]), " Mapas Probabilistico realizados...\n")
     
     
     myPalette2 = colorRampPalette(c("steelblue2" , "deepskyblue", "lightcyan","khaki","yellow", "orange1","darkorange3", "red", "firebrick4"))
@@ -333,15 +326,16 @@ metric_map <- function(path_metric, path_output,path_raw){
     print(above,vp=viewport(layout.pos.row=1,layout.pos.col=3))
     
     dev.off()
-    cat("Mapas Probabilidades realizados...\n")
+    cat(paste0(trimesters[i])," Mapas Probabilidades realizados...\n")
   }
  
 
 }
 
 # Run ---------------------------------------------------------------------
-# folders <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone"
-# normal_path <-"D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
+ folders <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone"
+ normal_path <-"D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
+
 
 # Run all_domain
 path_metric <-  paste0(folders,"/output/all_domain")
