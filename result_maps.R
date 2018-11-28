@@ -333,24 +333,17 @@ metric_map <- function(path_metric, path_output,path_raw){
 }
 
 # Run ---------------------------------------------------------------------
- folders <- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone"
- normal_path <-"D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0"
-
 
 # Run all_domain
 path_metric <-  paste0(folders,"/output/all_domain")
 path_out <-  paste0(folders,"/output/all_domain")
 path_raw <- normal_path
 
-
-
 path_raw_m <- lapply(path_raw, "[[",1)
 Map(function(x,y,z)Map(metric_map,x,y,z),path_metric,path_out,path_raw_m)
 
-
 Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
 Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
-
 
 #Run opt_domain
 path_metric <-  paste0(folders,"/output/opt_domain")
@@ -359,7 +352,6 @@ path_raw <- best_path
 
 path_raw_m <- lapply(path_raw, "[[",1)
 Map(function(x,y,z)Map(metric_map,x,y,z),path_metric,path_out,path_raw_m)
-
 
 Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
 Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
