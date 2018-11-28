@@ -123,7 +123,7 @@ cca_map <- function(path_raw , path_output,i, coor) {
     geom_hline(yintercept = 0, colour="gray") + theme_bw() + 
     theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 90, hjust = 1, size = 12)) +
     guides(colour = guide_legend(title = " ")) + labs(subtitle=paste("Canonical Correlation = ", round(cor(datos$X,datos$Y),3),sep = ""),x="",y="Scores (X red; Y green) (*100)",
-                                                      title = "Temporal Scores (Mode 1)") + scale_x_continuous(breaks = seq(min(datos$date),max(datos$date),3))
+                                                      title = paste0("Temporal Scores (Mode " ,i,")")) + scale_x_continuous(breaks = seq(min(datos$date),max(datos$date),3))
   
   
   layt<-grid.layout(nrow=1,ncol=3,widths=c(4/9,2.5/9, 2.5/9),default.units=c('null','null'))
