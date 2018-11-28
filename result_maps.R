@@ -144,6 +144,23 @@ cca_map <- function(path_raw , path_output,i, coor) {
 
 }
 
+cca_map_all <- function(path_raw,path_output){
+  
+y <- read.table(paste0(path_raw, "_cca_load_x.txt"),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
+y[1,1]=""
+loadings <- na.omit(y)
+loadings[loadings==-999]=NA
+pos=which(loadings[,1]=="")
+if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
+coor <- list(list_dates[[1]][1,][-1],list_dates[[1]][,1][-1])
+
+tables <<- lapply(list_dates,"[",-1,-1)
+
+for(i in 1:length(tables)) cca_map(path_raw,path_output,i,coor)
+}
+
+
+
 # Metrics maps ------------------------------------------------------------
 
 metric_map <- function(path_metric, path_output,path_raw){
@@ -328,43 +345,28 @@ metric_map <- function(path_metric, path_output,path_raw){
 
 # Run all_domain
 path_metric <-  paste0(folders,"/output/all_domain")
-path_output <-  paste0(folders,"/output/all_domain")
+path_out <-  paste0(folders,"/output/all_domain")
 path_raw <- normal_path
 
 
-y <- read.table(paste0(path_raw, "_cca_load_x.txt"),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
-y[1,1]=""
-loadings <- na.omit(y)
-loadings[loadings==-999]=NA
-pos=which(loadings[,1]=="")
-if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
-coor <- list(list_dates[[1]][1,][-1],list_dates[[1]][,1][-1])
 
-tables <- lapply(list_dates,"[",-1,-1)
+path_raw_m <- lapply(path_raw, "[[",1)
+Map(function(x,y,z)Map(metric_map,x,y,z),path_metric,path_out,path_raw_m)
 
 
+Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
+Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
 
-for(i in 1:length(tables)) cca_map(path_raw,path_output,i,coor)
-metric_map(path_metric, path_output, path_raw)
-eigen_plot(path_raw,path_output)
 
 #Run opt_domain
-best_path<- "D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/TNC-Honduras/zone/output/raw_output/Aug_Dec-Jan-Feb_0.7"
 path_metric <-  paste0(folders,"/output/opt_domain")
-path_output <-  paste0(folders,"/output/opt_domain")
+path_out <-  paste0(folders,"/output/opt_domain")
 path_raw <- best_path
 
-y <- read.table(paste0(path_raw, "_cca_load_x.txt"),sep="\t",dec=".",skip =2,fill=TRUE,na.strings =-999,stringsAsFactors=FALSE)
-y[1,1]=""
-loadings <- na.omit(y)
-loadings[loadings==-999]=NA
-pos=which(loadings[,1]=="")
-if(length(pos)==1){list_dates=list(loadings)}else{vector_split <- sort(rep(pos,pos[2]-1));list_dates <- split(loadings,vector_split)}
-coor <- list(list_dates[[1]][1,][-1],list_dates[[1]][,1][-1])
+path_raw_m <- lapply(path_raw, "[[",1)
+Map(function(x,y,z)Map(metric_map,x,y,z),path_metric,path_out,path_raw_m)
 
-tables <- lapply(list_dates,"[",-1,-1)
 
-for(i in 1:length(tables)) cca_map(path_raw,path_output,i,coor)
-metric_map(path_metric, path_output, path_raw)
-eigen_plot(path_raw,path_output)
+Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
+Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
 
