@@ -14,7 +14,7 @@ library(R.utils)
 # Generación de estructura de carpetas ------------------------------------------
 
 main_dir <- "D:/OneDrive - CGIAR/Desktop/test" # Modifique esta línea de acuerdo a su directorio de trabajo
-nom_c <- "Corrida_1" # Modifique esta línea con el nombre que desee
+nom_c <- "Corrida_2" # Modifique esta línea con el nombre que desee
 
 dir.create(paste0(main_dir,"/",  nom_c,"/input/sst_ersst"), recursive = T)
 dir.create(paste0(main_dir,"/", nom_c,"/input/stations"), recursive = T)

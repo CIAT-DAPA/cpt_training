@@ -323,6 +323,38 @@ save_areas=function(ras,cor,all_name){
 }
 
 
+eigen_plot <- function(path_raw, path_output){
+  xeigen<- read.csv(paste0(path_raw, "_pca_eigen_x.txt"),skip =2, header=T, sep="")
+  yeigen <- read.csv(paste0(path_raw,"_pca_eigen_y.txt"),skip =2, header=T, sep="")
+  
+  
+  datos_e <- data.frame(modes=xeigen$Mode, eigenx=xeigen$variance, eigeny=yeigen$variance, row.names = NULL)
+  
+  # gráfico de los modos 
+  modosx <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigenx ),  colour="firebrick3" ) + geom_point(aes(y = eigenx ),  colour="firebrick3" ) +
+    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
+    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "X Scree Plot") 
+  
+  
+  modosy <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigeny ),  colour="firebrick3" ) + geom_point(aes(y = eigeny ),  colour="firebrick3" ) +
+    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
+    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "Y Scree Plot") 
+  
+  layt<-grid.layout(nrow=1,ncol=2)
+  trim_n = unlist(strsplit(path_raw,"/")) 
+  trim_n = trim_n[length(trim_n)]
+  
+  tiff(filename = paste0(path_output,"/",trim_n, "_eigen_plot.tif"), width = 1500, height = 800,res=150,compression = 'lzw')
+  grid.newpage()
+  pushViewport(viewport(layout=layt))
+  print(modosx,vp=viewport(layout.pos.row=1,layout.pos.col=1))
+  print(modosy,vp=viewport(layout.pos.row=1,layout.pos.col=2))
+  dev.off()
+  cat(paste0(trim_n)," Scree plots realizados...\n")
+  
+}
+
+
 cca_map <- function(path_raw , path_output,i, coor) {
   
   xserie <- read.csv(paste0(path_raw, "_cca_scores_x.txt"),skip =2, header=T, sep="")
