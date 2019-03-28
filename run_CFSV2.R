@@ -7,13 +7,13 @@
 
 ############# parametros variables ###############
 
-main_dir <- "D:/OneDrive - CGIAR/Desktop/Codigos_TNC/cpt_r"
+main_dir <- "D:/OneDrive - CGIAR/Desktop/test"
 modes_x <- 10
 modes_y <- 10
 modes_cca <- 5
 trans <- 0       ###### 1 si quiere hacer transformacion y 0 si no quiere hacer transformacion
 type_trans <- 2  ###### 1 transformacion normal y 2 transformacion gamma
-  
+
 ########### Packages ###############
 
 suppressMessages(if(!require(rworldmap)){install.packages('rworldmap'); library(rworldmap)} else {library(rworldmap)})
@@ -29,6 +29,7 @@ suppressMessages(if(require(stringr)==FALSE){install.packages("stringr",dependen
 suppressMessages(if(require(corpcor)==FALSE){install.packages("corpcor")}); library("corpcor")
 suppressMessages(if(require(pcaPP)==FALSE){install.packages("pcaPP")}); library("pcaPP")
 suppressMessages(if(require(RColorBrewer)==FALSE){install.packages("RColorBrewer")});library("RColorBrewer")
+suppressMessages(if(require(parallel)==FALSE){install.packages("parallel")});library("parallel")
 
 ########### Functions ##############
 
@@ -306,7 +307,7 @@ metricas=function(x){
 save_areas=function(ras,cor,all_name){
   
   name=basename(all_name) 
-  dec=substr(name,nchar(name)-2,nchar(name))
+  dec=str_split(name,"_")[[1]][3]
   cor_raster=ras[[1]]
   values(cor_raster)=cor
   q1=quantile(cor,as.numeric(dec),na.rm=T)
@@ -321,36 +322,6 @@ save_areas=function(ras,cor,all_name){
   
 }
 
-eigen_plot <- function(path_raw, path_output){
-  xeigen<- read.csv(paste0(path_raw, "_pca_eigen_x.txt"),skip =2, header=T, sep="")
-  yeigen <- read.csv(paste0(path_raw,"_pca_eigen_y.txt"),skip =2, header=T, sep="")
-  
-  
-  datos_e <- data.frame(modes=xeigen$Mode, eigenx=xeigen$variance, eigeny=yeigen$variance, row.names = NULL)
-  
-  # grÃ¡fico de los modos 
-  modosx <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigenx ),  colour="firebrick3" ) + geom_point(aes(y = eigenx ),  colour="firebrick3" ) +
-    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
-    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "X Scree Plot") 
-  
-  
-  modosy <-  ggplot(datos_e, aes(modes,group = 1)) +   geom_line(aes(y = eigeny ),  colour="firebrick3" ) + geom_point(aes(y = eigeny ),  colour="firebrick3" ) +
-    theme_bw() + theme( title =element_text(size=12, face='bold'),axis.text.y = element_text(size=12),  legend.position = "none", axis.text.x = element_text(angle = 0, hjust = 1, size = 12)) +
-    guides(colour = guide_legend(title = " ")) + labs(x="Mode",y="% variance",title = "Y Scree Plot") 
-  
-  layt<-grid.layout(nrow=1,ncol=2)
-  trim_n = unlist(strsplit(path_raw,"/")) 
-  trim_n = trim_n[length(trim_n)]
-  
-  tiff(filename = paste0(path_output,"/",trim_n, "_eigen_plot.tif"), width = 1500, height = 800,res=150,compression = 'lzw')
-  grid.newpage()
-  pushViewport(viewport(layout=layt))
-  print(modosx,vp=viewport(layout.pos.row=1,layout.pos.col=1))
-  print(modosy,vp=viewport(layout.pos.row=1,layout.pos.col=2))
-  dev.off()
-  cat(paste0(trim_n)," Scree plots realizados...\n")
-  
-}
 
 cca_map <- function(path_raw , path_output,i, coor) {
   
@@ -652,7 +623,12 @@ path_run <- Map(function(x,y) paste0(x,"/bat_files/",y,"_0",".bat"),folders,name
 
 cat("\n Directorios cargados y carpetas creadas \n")
 
-first_run <- Map(function(x,y,z,k,p1,p2,p3,p4,p5)Map(run_cpt,x,y,z,k,p1,p2,p3,p4,p5),path_x,path_y,path_run,path_output,modes_x,modes_y,modes_cca,trans,type_trans)
+numCores <- detectCores()
+numCores
+cl <- makeCluster(numCores-1)
+clusterExport(cl,list("run_cpt","path_x","path_y","path_run","path_output","modes_x","modes_y","modes_cca","trans","type_trans"),envir=environment()) 
+
+first_run <- clusterMap(cl,function(x,y,z,k,p1,p2,p3,p4,p5)Map(run_cpt,x,y,z,k,p1,p2,p3,p4,p5),path_x,path_y,path_run,path_output,modes_x,modes_y,modes_cca,trans,type_trans)
 
 cat("\n Primera corrida realizada")
 
@@ -672,7 +648,11 @@ cor_tsm <- Map(function(x,y)Map(correl,x,y),cc,load)
 cat("\n Correlación calculada")
 
 names_selec <-Map(function(x,y) paste0(x,"/input/sst_cfsv2/",substr(y,1,nchar(y))) ,folders,names_x)
-o_empty_1=Map(function(x,y,z,r)Map(files_x,x,y,z,r),tsm_raster,cor_tsm,names_selec,time_sel)
+
+clusterExport(cl,list("files_x","tsm_raster","cor_tsm","names_selec","time_sel"),envir=environment()) 
+clusterEvalQ(cl, library("sp"))
+
+o_empty_1=clusterMap(cl,function(x,y,z,r)Map(files_x,x,y,z,r),tsm_raster,cor_tsm,names_selec,time_sel)
 
 cat("\n Archivos de la TSM construidos por deciles para CPT \n")
 
@@ -680,7 +660,10 @@ path_x_2 <- lapply(folders,function(x)list.files(paste0(x,"/input/sst_cfsv2"),fu
 names_x_2 <- lapply(path_x_2,function(x) substr(basename(x),1,nchar(basename(x))-4))
 path_run_2 <- Map(function(x,y) paste0(x,"/bat_files/",y,".bat"),folders,names_x_2)
 path_output_2 <- Map(function(x,y) paste0(x,"/output/raw_output/",y),folders,names_x_2)
-o_empty_2 <-Map(function(x,y,z,k,p1,p2,p3,p4,p5)Map(run_cpt,x,y,z,k,p1,p2,p3,p4,p5),path_x_2,path_y,path_run_2,path_output_2,modes_x,modes_y,modes_cca,trans,type_trans)
+
+clusterExport(cl,list("path_x_2","path_y","path_run_2","path_output_2"),envir=environment()) 
+
+o_empty_2 <-clusterMap(cl,function(x,y,z,k,p1,p2,p3,p4,p5)Map(run_cpt,x,y,z,k,p1,p2,p3,p4,p5),path_x_2,path_y,path_run_2,path_output_2,modes_x,modes_y,modes_cca,trans,type_trans)
 
 cat("\n Segunda corrida realizada\n")
 
@@ -708,7 +691,9 @@ o_empty_5 <- Map(function(x,y,z)Map(save_areas,x,y,z),tsm_raster,cor_tsm,path_im
 
 cat("\n Pixeles selecionados almacenados en .tiff  \n")
 
-# Run all_domain
+stopCluster(cl)
+
+# Run plot all_domain
 path_metric <-  paste0(folders,"/output/all_domain")
 path_out <-  paste0(folders,"/output/all_domain")
 path_raw <- normal_path
@@ -719,7 +704,7 @@ Map(function(x,y,z)Map(metric_map,x,y,z),path_metric,path_out,path_raw_m)
 Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
 Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
 
-#Run opt_domain
+#Run plot opt_domain
 path_metric <-  paste0(folders,"/output/opt_domain")
 path_out <-  paste0(folders,"/output/opt_domain")
 path_raw <- best_path
@@ -731,7 +716,6 @@ Map(function(x,y)Map(eigen_plot,x,y),path_raw,path_out)
 Map(function(x,y)Map(cca_map_all,x,y),path_raw,path_out)
 
 cat("\n Gráficos almacenados en .tiff  \n")
-
 
 
 
