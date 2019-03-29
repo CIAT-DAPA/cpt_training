@@ -14,7 +14,7 @@ library(R.utils)
 # Generación de estructura de carpetas ------------------------------------------
 
 main_dir <- "D:/OneDrive - CGIAR/Desktop/test" # Modifique esta línea de acuerdo a su directorio de trabajo
-nom_c <- "Corrida_1" # Modifique esta línea con el nombre que desee
+nom_c <- "Corrida_2" # Modifique esta línea con el nombre que desee
 
 dir.create(paste0(main_dir,"/", nom_c,"/input/sst_cfsv2"), recursive = T)
 dir.create(paste0(main_dir,"/", nom_c,"/input/stations"), recursive = T)
@@ -43,11 +43,11 @@ download_CFSV2_CPT_1=function(firs_year,last_year,i_month,ic,dir_save,area1, lg)
 
 area1 <- c(0,359,-30,30) # Modifique esta línea con el Área a descargar xmin, xmax, ymin, ymax)
 
-i_month <- 4 # Modifique esta línea con el Mes de inicio del trimestre de interés
+i_month <- 3 # Modifique esta línea con el Mes de inicio del trimestre de interés
 lg <- 3 # Modifique esta línea con el Tamaño de la temporada a descargar. Por ej. AMJ lg=3/ AM lg=2
 ic <- 2 # Modifique esta línea con la Condición inicial de la corrida del pronóstico o también conocido como lead time
 firs_year <- 1981 # Modifique esta línea con el Año de inicio de la descarga
-last_year <- 2018 # Modifique esta línea con el Año de final de la descarga
+last_year <- 2019 # Modifique esta línea con el Año de final de la descarga
 
 # Aquí se ejecuta la función con los parámetros dados anteriormente
 download_CFSV2_CPT_1(firs_year,last_year,i_month,ic,dir_save,area1,lg=lg)
