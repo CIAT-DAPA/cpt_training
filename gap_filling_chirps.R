@@ -1,21 +1,26 @@
+# Creado por: Lizeth Llanos
+# Ejercicios para llenado de datos faltantes usando CHIRPS
+
 library(raster)
 require(ncdf4)
 
-chirps_all = stack("C:\\Users\\lllanos\\Downloads\\data_peru.nc")
+chirps_all = stack("D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/Capacitaciones/México/Ejercicio CHIRPS/mexico.nc")
 
-setwd("C:/Users/lllanos/Desktop/peru")
+
+setwd("D:/OneDrive - CGIAR/Tobackup/CIAT/Projects/Capacitaciones/México/Ejercicio CHIRPS")
 dpto="chirps"
+
 dir.create(dpto)
 
-station_data = read.csv(file = paste0("PP_C_N.csv"),header=T,na.strings = "-9999")
+station_data = read.csv(file = paste0("data_stations.csv"),header=T,na.strings = "-999.99")
 station_data = station_data[station_data$year>1980,]
-station_coord = read.csv(file = "coordenadas.csv",header=T)
+station_coord = read.csv(file = "coor_stations.csv",header=T)
 
 station_chirps.b = raster::extract(x=chirps_all, y=station_coord[,-1], method = 'bilinear')
 station_chirps.b = as.data.frame(t(station_chirps.b))[1:nrow(station_data),]
 names(station_chirps.b)=names(station_data)[-2:-1]
 
-dates=seq(as.Date("1981/01/01"),as.Date("2016/03/31"),"month")
+dates=seq(as.Date("1981/01/01"),as.Date("2019/01/31"),"month")
 months=months.Date(dates)
 names_st=names(station_chirps.b)
 
@@ -28,7 +33,7 @@ add_legend <- function(...) {
   legend(...)
 }
 
-setwd("C:/Users/lllanos/Desktop/peru/chirps")
+setwd("chirps")
 
 for (i in 1:ncol(station_chirps.b)){
   data.model = as.data.frame(cbind("y"=station_data[,i+2],"x"=station_chirps.b[,i]))
