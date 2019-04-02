@@ -364,13 +364,15 @@ eigen_plot <- function(path_raw, path_output){
   
 }
 
+
 cca_map <- function(path_raw , path_output,i, coor) {
   
   xserie <- read.csv(paste0(path_raw, "_cca_scores_x.txt"),skip =2, header=T, sep="")
   yserie <- read.csv(paste0(path_raw,"_cca_scores_y.txt"),skip =2, header=T, sep="")
   
   yloadcca <-  read.csv(paste0(path_raw, "_cca_load_y.txt"),skip =2, header=T, sep="")
-  
+  yloadcca[yloadcca==-999.99000000] <-NA
+  yloadcca <- na.omit(yloadcca)
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
   ## CCA Maps
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##

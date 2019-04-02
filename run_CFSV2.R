@@ -361,7 +361,8 @@ cca_map <- function(path_raw , path_output,i, coor) {
   yserie <- read.csv(paste0(path_raw,"_cca_scores_y.txt"),skip =2, header=T, sep="")
   
   yloadcca <-  read.csv(paste0(path_raw, "_cca_load_y.txt"),skip =2, header=T, sep="")
-  
+  yloadcca[yloadcca==-999.99000000] <-NA
+  yloadcca <- na.omit(yloadcca)
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
   ## CCA Maps
   ## =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= ##
@@ -483,8 +484,8 @@ metric_map <- function(path_metric, path_output,path_raw){
   sel <<-new_map[new_map$lat>ext_y[1] & new_map$lat<ext_y[2] & new_map$long>ext_y[3] & new_map$long<ext_y[4],]
   
   
-  all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv'), na.strings = c(-999.99, -1)) 
-  
+  all_ind_complete_na <-read.csv(paste0(path_metric, '/metrics.csv'), na.strings = c(-999.99, -1)) 
+  all_ind_complete <-na.omit(all_ind_complete_na)
   trimesters <- unique(all_ind_complete$file)
   
   for(i in 1:length(trimesters)){
