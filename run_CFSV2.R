@@ -483,7 +483,7 @@ metric_map <- function(path_metric, path_output,path_raw){
   sel <<-new_map[new_map$lat>ext_y[1] & new_map$lat<ext_y[2] & new_map$long>ext_y[3] & new_map$long<ext_y[4],]
   
   
-  all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv')) 
+  all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv'), na.strings = c(-999.99, -1)) 
   
   trimesters <- unique(all_ind_complete$file)
   
@@ -683,6 +683,7 @@ names_selec <-Map(function(x,y) paste0(x,"/input/sst_cfsv2/",substr(y,1,nchar(y)
 
 clusterExport(cl,list("files_x","tsm_raster","cor_tsm","names_selec","time_sel"),envir=environment()) 
 clusterEvalQ(cl, library("sp"))
+clusterEvalQ(cl, library("raster"))
 
 o_empty_1=clusterMap(cl,function(x,y,z,r)Map(files_x,x,y,z,r),tsm_raster,cor_tsm,names_selec,time_sel)
 

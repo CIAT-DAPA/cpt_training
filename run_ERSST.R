@@ -492,7 +492,7 @@ metric_map <- function(path_metric, path_output,path_raw){
   sel <<-new_map[new_map$lat>ext_y[1] & new_map$lat<ext_y[2] & new_map$long>ext_y[3] & new_map$long<ext_y[4],]
   
   
-  all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv')) 
+  all_ind_complete <-read.csv(paste0(path_metric, '/metrics.csv'), na.strings = c(-999.99,-1)) 
   
   trimesters <- unique(all_ind_complete$file)
   
