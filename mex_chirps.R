@@ -3,12 +3,14 @@
 
 # Cargar librerias. Recuerde instalarlas previamente con install.packages ---
 # Link para descargar datos de chirps : https://iridl.ldeo.columbia.edu/SOURCES/.UCSB/.CHIRPS/.v2p0/.monthly/.global/.precipitation/Y/%2812%29/%2835%29/RANGEEDGES/X/%28-120%29/%28-80%29/RANGEEDGES/datafiles.html
+suppressMessages(if(!require(raster)){install.packages('raster'); library(raster)} else {library(raster)})
+suppressMessages(if(!require(ncdf4)){install.packages('ncdf4'); library(ncdf4)} else {library(ncdf4)})
+suppressMessages(if(!require(maptools)){install.packages('maptools'); library(maptools)} else {library(maptools)})
+suppressMessages(if(!require(rgdal)){install.packages('rgdal'); library(rgdal)} else {library(rgdal)})
 
-library(raster)
-library(ncdf4)
-library(maptools)
-library(rgdal)
+# establecer directorio de trabajo
 
+setwd("E:/")
 
 # Cargar stack de chirps --------------------------------------------------
 
