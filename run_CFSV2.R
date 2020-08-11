@@ -7,10 +7,10 @@
 
 ############# parametros variables ###############
 
-main_dir <- "D:/OneDrive - CGIAR/Desktop/test"
-modes_x <- 10
-modes_y <- 10
-modes_cca <- 5
+main_dir <- "D:/OneDrive - CGIAR/Documents/diego"
+modes_x <- 2
+modes_y <- 2
+modes_cca <- 1
 trans <- 0       ###### 1 si quiere hacer transformacion y 0 si no quiere hacer transformacion
 type_trans <- 2  ###### 1 transformacion normal y 2 transformacion gamma
 
@@ -30,6 +30,7 @@ suppressMessages(if(require(corpcor)==FALSE){install.packages("corpcor")}); libr
 suppressMessages(if(require(pcaPP)==FALSE){install.packages("pcaPP")}); library("pcaPP")
 suppressMessages(if(require(RColorBrewer)==FALSE){install.packages("RColorBrewer")});library("RColorBrewer")
 suppressMessages(if(require(parallel)==FALSE){install.packages("parallel")});library("parallel")
+
 
 ########### Functions ##############
 
@@ -322,7 +323,6 @@ save_areas=function(ras,cor,all_name){
   
 }
 
-
 eigen_plot <- function(path_raw, path_output){
   xeigen<- read.csv(paste0(path_raw, "_pca_eigen_x.txt"),skip =2, header=T, sep="")
   yeigen <- read.csv(paste0(path_raw,"_pca_eigen_y.txt"),skip =2, header=T, sep="")
@@ -353,7 +353,6 @@ eigen_plot <- function(path_raw, path_output){
   cat(paste0(trim_n)," Scree plots realizados...\n")
   
 }
-
 
 cca_map <- function(path_raw , path_output,i, coor) {
   

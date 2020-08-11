@@ -54,7 +54,7 @@ download_CFSV2_CPT_1(firs_year,last_year,i_month,ic,dir_save,area1,lg=lg)
 
 
 # Función para descargar dos áreas de la TSM del modelo CFSv2 --------------
-download_CFSV2_CPT_2=function(firs_year,last_year,i_month,ic,dir_save,area1,area2){
+download_CFSV2_CPT_2=function(firs_year,last_year,i_month,ic,dir_save,area1,lg,area2){
   
   lg_s <-lg-1
   lead <- i_month-ic
